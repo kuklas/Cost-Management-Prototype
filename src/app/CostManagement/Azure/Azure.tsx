@@ -1,0 +1,442 @@
+import * as React from 'react';
+import {
+  PageSection,
+  Title,
+  Card,
+  CardBody,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
+  ToolbarGroup,
+  ToolbarToggleGroup,
+  MenuToggle,
+  Select,
+  SelectOption,
+  SelectList,
+  SearchInput,
+  Button,
+  Pagination,
+  PaginationVariant,
+  Breadcrumb,
+  BreadcrumbItem,
+  Flex,
+  FlexItem,
+  Checkbox,
+} from '@patternfly/react-core';
+import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
+import {
+  FilterIcon,
+  ExportIcon,
+  EllipsisVIcon,
+  CheckCircleIcon,
+  PauseIcon,
+  SortAmountDownIcon,
+  SortAmountUpIcon,
+} from '@patternfly/react-icons';
+import { Link } from 'react-router-dom';
+
+interface AccountItem {
+  id: string;
+  name: string;
+  alias?: string;
+  momChange: number;
+  momPrevCost: string;
+  cost: string;
+  costPercent: string;
+}
+
+const Azure: React.FunctionComponent = () => {
+  const [currencyOpen, setCurrencyOpen] = React.useState(false);
+  const [groupByOpen, setGroupByOpen] = React.useState(false);
+  const [dateRangeOpen, setDateRangeOpen] = React.useState(false);
+  const [categoryOpen, setCategoryOpen] = React.useState(false);
+  const [operatorOpen, setOperatorOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [perPage, setPerPage] = React.useState(10);
+  const [sortIndex, setSortIndex] = React.useState<number>(3);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
+  const [selectAll, setSelectAll] = React.useState(false);
+
+  // Mock data
+  const accounts: AccountItem[] = [
+    {
+      id: '2639de71-ca37-4a17-a104-17665a50e7fc',
+      name: 'Cost Management SaaS Dev/Test',
+      alias: '2639de71-ca37-4a17-a104-17665a50e7fc',
+      momChange: -8.56,
+      momPrevCost: '$62.81',
+      cost: '$57.43',
+      costPercent: '48.34',
+    },
+    {
+      id: '38f1d748-3ac7-4b7f-a5ae-8b5ff16db82d',
+      name: 'Boone-Yu Azure Subscription',
+      alias: '38f1d748-3ac7-4b7f-a5ae-8b5ff16db82d',
+      momChange: -80.79,
+      momPrevCost: '$115.34',
+      cost: '$61.38',
+      costPercent: '51.66',
+    },
+    {
+      id: '2f8e2495-aaad-47bc-8150-82a0cfc5d0c6',
+      name: 'Cost Management',
+      alias: '2f8e2495-aaad-47bc-8150-82a0cfc5d0c6',
+      momChange: 4.6,
+      momPrevCost: '$0.01',
+      cost: '$0.01',
+      costPercent: '0.01',
+    },
+  ];
+
+  const totalItems = 3;
+
+  const getSortParams = (columnIndex: number): ThProps['sort'] => ({
+    sortBy: {
+      index: sortIndex,
+      direction: sortDirection,
+    },
+    onSort: (_event, index, direction) => {
+      setSortIndex(index);
+      setSortDirection(direction);
+    },
+    columnIndex,
+  });
+
+  return (
+    <>
+      {/* Breadcrumb Section */}
+      <PageSection
+        style={{
+          paddingBottom: 0,
+          paddingTop: 'var(--pf-t--global--spacer--sm)',
+          backgroundColor: 'var(--pf-t--global--background--color--primary--default)'
+        }}
+      >
+        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
+          <FlexItem flex={{ default: 'flex_1' }}>
+            <Breadcrumb style={{ paddingTop: 'var(--pf-t--global--spacer--sm)' }}>
+              <BreadcrumbItem to="/">OpenShift</BreadcrumbItem>
+              <BreadcrumbItem to="/cost-management/overview">Cost Management</BreadcrumbItem>
+              <BreadcrumbItem to="/cost-management/azure" isActive>Microsoft Azure</BreadcrumbItem>
+            </Breadcrumb>
+          </FlexItem>
+          <FlexItem alignSelf={{ default: 'alignSelfFlexEnd' }}>
+            {/* Placeholder for favorite icon */}
+          </FlexItem>
+        </Flex>
+      </PageSection>
+
+      {/* Header Section */}
+      <PageSection style={{ paddingBottom: 0 }}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+          {/* Title and Currency Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
+            <FlexItem>
+              <Title headingLevel="h1" size="2xl" style={{ paddingBottom: 'var(--pf-t--global--spacer--sm)' }}>
+                Microsoft Azure details
+              </Title>
+            </FlexItem>
+            <FlexItem>
+              <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Title headingLevel="h2" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                  Currency
+                </Title>
+                <Select
+                  isOpen={currencyOpen}
+                  onSelect={() => setCurrencyOpen(false)}
+                  onOpenChange={(isOpen) => setCurrencyOpen(isOpen)}
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() => setCurrencyOpen(!currencyOpen)}
+                      isExpanded={currencyOpen}
+                      style={{ width: '280px' }}
+                    >
+                      USD ($) - United States Dollar
+                    </MenuToggle>
+                  )}
+                >
+                  <SelectList>
+                    <SelectOption value="USD">USD ($) - United States Dollar</SelectOption>
+                  </SelectList>
+                </Select>
+              </Flex>
+            </FlexItem>
+          </Flex>
+
+          {/* Controls and Status Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
+            <FlexItem>
+              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                {/* Integration Status */}
+                <FlexItem>
+                  <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
+                  <span style={{ marginRight: '0.5rem' }}>3</span>
+                  <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+                  <span style={{ marginRight: '0.5rem' }}>1</span>
+                  <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+                  <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
+                    View all
+                  </Button>
+                </FlexItem>
+              </Flex>
+            </FlexItem>
+
+            <FlexItem>
+              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                {/* Group by */}
+                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                    Group by
+                  </Title>
+                  <Select
+                    isOpen={groupByOpen}
+                    onSelect={() => setGroupByOpen(false)}
+                    onOpenChange={(isOpen) => setGroupByOpen(isOpen)}
+                    toggle={(toggleRef) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        onClick={() => setGroupByOpen(!groupByOpen)}
+                        isExpanded={groupByOpen}
+                      >
+                        Account
+                      </MenuToggle>
+                    )}
+                  >
+                    <SelectList>
+                      <SelectOption value="Account">Account</SelectOption>
+                      <SelectOption value="Service">Service</SelectOption>
+                      <SelectOption value="Region">Region</SelectOption>
+                    </SelectList>
+                  </Select>
+                </Flex>
+
+                {/* Date Range */}
+                <Select
+                  isOpen={dateRangeOpen}
+                  onSelect={() => setDateRangeOpen(false)}
+                  onOpenChange={(isOpen) => setDateRangeOpen(isOpen)}
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() => setDateRangeOpen(!dateRangeOpen)}
+                      isExpanded={dateRangeOpen}
+                    >
+                      Month to date
+                    </MenuToggle>
+                  )}
+                >
+                  <SelectList>
+                    <SelectOption value="mtd">Month to date</SelectOption>
+                    <SelectOption value="ytd">Year to date</SelectOption>
+                  </SelectList>
+                </Select>
+              </Flex>
+            </FlexItem>
+          </Flex>
+
+          {/* Total Cost Display */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
+            <FlexItem>
+              <Title headingLevel="h2" size="4xl" style={{ marginTop: 'var(--pf-t--global--spacer--lg)', marginBottom: 0 }}>
+                $118.82
+              </Title>
+            </FlexItem>
+            <FlexItem style={{ textAlign: 'end' }}>
+              October 1 – 23
+            </FlexItem>
+          </Flex>
+        </Flex>
+      </PageSection>
+
+      {/* Main Content */}
+      <PageSection>
+        <Card>
+          <CardBody>
+            {/* Toolbar */}
+            <Toolbar id="azure-toolbar">
+              <ToolbarContent>
+                <ToolbarItem>
+                  <Checkbox
+                    id="bulk-select"
+                    aria-label="Select all items"
+                    isChecked={selectAll}
+                    onChange={(_event, checked) => setSelectAll(checked)}
+                  />
+                </ToolbarItem>
+
+                <ToolbarToggleGroup toggleIcon={<FilterIcon />} breakpoint="xl">
+                  <ToolbarGroup variant="filter-group">
+                    <ToolbarItem>
+                      <Select
+                        isOpen={categoryOpen}
+                        onSelect={() => setCategoryOpen(false)}
+                        onOpenChange={(isOpen) => setCategoryOpen(isOpen)}
+                        toggle={(toggleRef) => (
+                          <MenuToggle
+                            ref={toggleRef}
+                            onClick={() => setCategoryOpen(!categoryOpen)}
+                            isExpanded={categoryOpen}
+                            icon={<FilterIcon />}
+                          >
+                            Account
+                          </MenuToggle>
+                        )}
+                      >
+                        <SelectList>
+                          <SelectOption value="Account">Account</SelectOption>
+                          <SelectOption value="Service">Service</SelectOption>
+                        </SelectList>
+                      </Select>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                      <Select
+                        isOpen={operatorOpen}
+                        onSelect={() => setOperatorOpen(false)}
+                        onOpenChange={(isOpen) => setOperatorOpen(isOpen)}
+                        toggle={(toggleRef) => (
+                          <MenuToggle
+                            ref={toggleRef}
+                            onClick={() => setOperatorOpen(!operatorOpen)}
+                            isExpanded={operatorOpen}
+                          >
+                            includes
+                          </MenuToggle>
+                        )}
+                      >
+                        <SelectList>
+                          <SelectOption value="includes">includes</SelectOption>
+                          <SelectOption value="excludes">excludes</SelectOption>
+                        </SelectList>
+                      </Select>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                      <SearchInput
+                        placeholder="Filter by account"
+                        value={searchValue}
+                        onChange={(_event, value) => setSearchValue(value)}
+                        onClear={() => setSearchValue('')}
+                      />
+                    </ToolbarItem>
+                  </ToolbarGroup>
+                </ToolbarToggleGroup>
+
+                <ToolbarGroup>
+                  <ToolbarItem>
+                    <Button variant="plain" aria-label="Export data" isDisabled>
+                      <ExportIcon />
+                    </Button>
+                  </ToolbarItem>
+                </ToolbarGroup>
+
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
+                  <Pagination
+                    itemCount={totalItems}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={(_evt, newPage) => setPage(newPage)}
+                    widgetId="azure-pagination-top"
+                    onPerPageSelect={(_evt, newPerPage, newPage) => {
+                      setPerPage(newPerPage);
+                      setPage(newPage);
+                    }}
+                    isCompact
+                  />
+                </ToolbarItem>
+              </ToolbarContent>
+            </Toolbar>
+
+            {/* Table */}
+            <Table aria-label="Microsoft Azure details table" variant="compact" gridBreakPoint="grid-2xl">
+              <Thead>
+                <Tr>
+                  <Th />
+                  <Th sort={getSortParams(1)} modifier="nowrap">Account names</Th>
+                  <Th modifier="nowrap">Month over month change</Th>
+                  <Th
+                    sort={getSortParams(3)}
+                    modifier="nowrap"
+                    style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', paddingRight: 0 }}
+                  >
+                    Cost
+                  </Th>
+                  <Th modifier="nowrap" />
+                </Tr>
+              </Thead>
+              <Tbody>
+                {accounts.map((account, index) => (
+                  <Tr key={account.id}>
+                    <Td
+                      select={{
+                        rowIndex: index,
+                        onSelect: () => {},
+                        isSelected: false,
+                      }}
+                    />
+                    <Td dataLabel="Account names" modifier="nowrap">
+                      <Link to={`/cost-management/azure/breakdown?breakdown_desc=${account.id}&breakdown_title=${encodeURIComponent(account.name)}&group_by[subscription_guid]=${account.id}&id=${account.id}`}>
+                        {account.name}
+                      </Link>
+                      {account.alias && (
+                        <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                          {account.alias}
+                        </div>
+                      )}
+                    </Td>
+                    <Td dataLabel="Month over month change" modifier="nowrap">
+                      <div>
+                        <div style={{ color: account.momChange < 0 ? 'var(--pf-t--global--color--status--success--default)' : 'var(--pf-t--global--color--status--danger--default)' }}>
+                          {Math.abs(account.momChange)} %
+                          {account.momChange < 0 ? (
+                            <SortAmountDownIcon style={{ marginLeft: '4px', position: 'relative', bottom: '0.25rem' }} />
+                          ) : (
+                            <SortAmountUpIcon style={{ marginLeft: '4px', position: 'relative' }} />
+                          )}
+                        </div>
+                        <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                          {account.momPrevCost} for September 1 – 23
+                        </div>
+                      </div>
+                    </Td>
+                    <Td dataLabel="Cost" modifier="nowrap" style={{ textAlign: 'right' }}>
+                      {account.cost}
+                      <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                        {account.costPercent} % of cost
+                      </div>
+                    </Td>
+                    <Td isActionCell>
+                      <MenuToggle variant="plain" aria-label="More options">
+                        <EllipsisVIcon />
+                      </MenuToggle>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+
+            {/* Bottom Pagination */}
+            <div style={{ marginTop: 'var(--pf-t--global--spacer--sm)' }}>
+              <Pagination
+                itemCount={totalItems}
+                perPage={perPage}
+                page={page}
+                onSetPage={(_evt, newPage) => setPage(newPage)}
+                widgetId="azure-pagination-bottom"
+                onPerPageSelect={(_evt, newPerPage, newPage) => {
+                  setPerPage(newPerPage);
+                  setPage(newPage);
+                }}
+                variant={PaginationVariant.bottom}
+                isCompact={false}
+              />
+            </div>
+          </CardBody>
+        </Card>
+      </PageSection>
+    </>
+  );
+};
+
+export { Azure };
+

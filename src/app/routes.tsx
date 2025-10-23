@@ -1,9 +1,14 @@
 import * as React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { Dashboard } from '@app/Dashboard/Dashboard';
-import { Support } from '@app/Support/Support';
-import { GeneralSettings } from '@app/Settings/General/GeneralSettings';
-import { ProfileSettings } from '@app/Settings/Profile/ProfileSettings';
+import { OpenShift } from '@app/OpenShift/OpenShift';
+import { Overview } from '@app/CostManagement/Overview/Overview';
+import { Optimizations } from '@app/CostManagement/Optimizations/Optimizations';
+import { CostManagementOpenShift } from '@app/CostManagement/OpenShift/CostManagementOpenShift';
+import { AWS } from '@app/CostManagement/AWS/AWS';
+import { GCP } from '@app/CostManagement/GCP/GCP';
+import { Azure } from '@app/CostManagement/Azure/Azure';
+import { CostExplorer } from '@app/CostManagement/CostExplorer/CostExplorer';
+import { CostManagementSettings } from '@app/CostManagement/Settings/CostManagementSettings';
 import { NotFound } from '@app/NotFound/NotFound';
 
 export interface IAppRoute {
@@ -24,35 +29,70 @@ export type AppRouteConfig = IAppRoute | IAppRouteGroup;
 
 const routes: AppRouteConfig[] = [
   {
-    element: <Dashboard />,
+    element: <OpenShift />,
     exact: true,
-    label: 'Dashboard',
+    label: 'OpenShift',
     path: '/',
-    title: 'PatternFly Seed | Main Dashboard',
+    title: 'Cost Management | OpenShift',
   },
   {
-    element: <Support />,
-    exact: true,
-    label: 'Support',
-    path: '/support',
-    title: 'PatternFly Seed | Support Page',
-  },
-  {
-    label: 'Settings',
+    label: 'Cost management',
     routes: [
       {
-        element: <GeneralSettings />,
+        element: <Overview />,
         exact: true,
-        label: 'General',
-        path: '/settings/general',
-        title: 'PatternFly Seed | General Settings',
+        label: 'Overview',
+        path: '/cost-management/overview',
+        title: 'Cost Management | Overview',
       },
       {
-        element: <ProfileSettings />,
+        element: <Optimizations />,
         exact: true,
-        label: 'Profile',
-        path: '/settings/profile',
-        title: 'PatternFly Seed | Profile Settings',
+        label: 'Optimizations',
+        path: '/cost-management/optimizations',
+        title: 'Cost Management | Optimizations',
+      },
+      {
+        element: <CostManagementOpenShift />,
+        exact: true,
+        label: 'OpenShift',
+        path: '/cost-management/openshift',
+        title: 'Cost Management | OpenShift',
+      },
+      {
+        element: <AWS />,
+        exact: true,
+        label: 'Amazon Web Services',
+        path: '/cost-management/aws',
+        title: 'Cost Management | Amazon Web Services',
+      },
+      {
+        element: <GCP />,
+        exact: true,
+        label: 'Google Cloud',
+        path: '/cost-management/gcp',
+        title: 'Cost Management | Google Cloud',
+      },
+      {
+        element: <Azure />,
+        exact: true,
+        label: 'Microsoft Azure',
+        path: '/cost-management/azure',
+        title: 'Cost Management | Microsoft Azure',
+      },
+      {
+        element: <CostExplorer />,
+        exact: true,
+        label: 'Cost Explorer',
+        path: '/cost-management/explorer',
+        title: 'Cost Management | Cost Explorer',
+      },
+      {
+        element: <CostManagementSettings />,
+        exact: true,
+        label: 'Settings',
+        path: '/cost-management/settings',
+        title: 'Cost Management | Settings',
       },
     ],
   },
