@@ -296,6 +296,10 @@ class DataService {
     return this.data.aws.monthOverMonthChange;
   }
 
+  getAWSIntegrations(): any[] {
+    return this.data.integrations?.aws || [];
+  }
+
   // Get all AWS services across all accounts
   getAllAWSServices(): { serviceName: string; cost: number }[] {
     const servicesMap = new Map<string, number>();

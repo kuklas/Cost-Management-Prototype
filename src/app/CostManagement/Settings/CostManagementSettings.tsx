@@ -50,6 +50,9 @@ import {
   List,
   ListItem,
   Popover,
+  Grid,
+  GridItem,
+  Alert,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import {
@@ -230,6 +233,47 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [ocpDistributeNetwork, setOcpDistributeNetwork] = React.useState(true);
   const [ocpDistributeStorage, setOcpDistributeStorage] = React.useState(true);
 
+  // AWS Wizard - Private offers state
+  const [awsShowCreateCommitment, setAwsShowCreateCommitment] = React.useState(false);
+  const [awsCommitments, setAwsCommitments] = React.useState<Array<{
+    id: number;
+    commitment: string;
+    rate: string;
+    startDate: string;
+  }>>([]);
+  const [awsNewCommitment, setAwsNewCommitment] = React.useState('0');
+  const [awsNewRate, setAwsNewRate] = React.useState('0');
+  const [awsNewStartDate, setAwsNewStartDate] = React.useState('');
+
+  // Helper function to get commitment status
+  const getCommitmentStatus = (startDate: string): {
+    status: 'active' | 'not-started';
+    label: string;
+    variant: 'success' | 'info';
+    daysInfo: string;
+  } => {
+    const today = new Date();
+    const start = new Date(startDate);
+    const daysUntilStart = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (today < start) {
+      return {
+        status: 'not-started',
+        label: 'Not started',
+        variant: 'info',
+        daysInfo: `Starts in ${daysUntilStart} day${daysUntilStart !== 1 ? 's' : ''}`
+      };
+    } else {
+      const daysSinceStart = Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        status: 'active',
+        label: 'Active',
+        variant: 'success',
+        daysInfo: `Active for ${daysSinceStart} day${daysSinceStart !== 1 ? 's' : ''}`
+      };
+    }
+  };
+
   // Function to reset wizard state
   const resetWizardState = () => {
     setWizardName('');
@@ -259,15 +303,17 @@ const CostManagementSettings: React.FunctionComponent = () => {
     setOcpDistributeWorker(true);
     setOcpDistributeNetwork(true);
     setOcpDistributeStorage(true);
+    
+    // Reset AWS-specific state
+    setAwsShowCreateCommitment(false);
+    setAwsCommitments([]);
+    setAwsNewCommitment('0');
+    setAwsNewRate('0');
+    setAwsNewStartDate('');
   };
 
-  // Mock AWS integrations data
-  const awsIntegrations = [
-    { id: 'aws-costlab', name: 'AWS Costlab', assignedCostModel: 'test-dla' },
-    { id: 'aws-customer-filtered', name: 'AWS-Customer-Filtered-Data-Demo', assignedCostModel: 'simple' },
-    { id: 'aws-dev-nise', name: 'AWS - Dev Nise populator', assignedCostModel: '' },
-    { id: 'aws-redhat', name: 'AWS Red Hat Cost Management', assignedCostModel: 'AWS markup' },
-  ];
+  // Get AWS integrations from database
+  const awsIntegrations = dataService.getAWSIntegrations();
 
   // Mock OCP integrations data
   const ocpIntegrations = [
@@ -1989,60 +2035,292 @@ const CostManagementSettings: React.FunctionComponent = () => {
             >
               <Stack hasGutter>
                 <StackItem>
-                  <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
-                    Private offers (optional)
+                  <Title headingLevel="h2" size="xl">
+                    {awsShowCreateCommitment ? 'Create a private offer' : 'Private offers (optional)'}
                   </Title>
-                  <a
-                    href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-setting-up-cost-models"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: 'var(--pf-t--global--font--size--sm)' }}
-                  >
-                    Learn more
-                  </a>
                 </StackItem>
 
-                <StackItem>
-                  <p style={{ marginTop: '0.5rem', marginBottom: '1.5rem' }}>
-                    If you have private offers or hybrid commitments, enter your committed resources. This commitment applies across all clusters associated with this AWS account.
-                  </p>
+                {!awsShowCreateCommitment && (
+                  <>
+                    <StackItem>
+                      <Content>
+                        <p>
+                          If you have private offers or hybrid commitments, enter your committed resources. This commitment applies across all clusters associated with this AWS account.
+                        </p>
+                      </Content>
+                    </StackItem>
 
-                  <Title headingLevel="h3" size="lg" style={{ marginBottom: '1rem' }}>
-                    Red Hat OpenShift on AWS
-                  </Title>
+                    <StackItem>
+                      {awsCommitments.length === 0 ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                              <svg style={{ width: '48px', height: '48px' }} fill="currentColor" viewBox="0 0 512 512">
+                                <path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z" />
+                              </svg>
+                            </div>
+                            <Title headingLevel="h2" size="lg" style={{ marginBottom: '8px' }}>
+                              No private offers have been created.
+                            </Title>
+                            <div style={{ marginBottom: '16px' }}>
+                              To skip this step, click the <strong>next</strong> button.<br />
+                              You can create a private offer or modify one at a later time.
+                            </div>
+                            <Button variant="primary" onClick={() => setAwsShowCreateCommitment(true)}>
+                              Create commitment
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Toolbar id="private-offers-toolbar">
+                            <ToolbarContent>
+                              <ToolbarItem>
+                                <Button variant="primary" onClick={() => setAwsShowCreateCommitment(true)}>
+                                  Create commitment
+                                </Button>
+                              </ToolbarItem>
+                              <ToolbarItem variant="pagination">
+                                <Pagination
+                                  itemCount={awsCommitments.length}
+                                  perPage={10}
+                                  page={1}
+                                  variant={PaginationVariant.top}
+                                  titles={{
+                                    paginationAriaLabel: 'Private offers pagination',
+                                  }}
+                                />
+                              </ToolbarItem>
+                            </ToolbarContent>
+                          </Toolbar>
+                        <Table aria-label="Private offers table">
+                          <Thead>
+                            <Tr>
+                              <Th>Product</Th>
+                              <Th>Commitment (vCPUs/month)</Th>
+                              <Th>Rate</Th>
+                              <Th>Start date</Th>
+                              <Th>Status</Th>
+                              <Th></Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {awsCommitments.map((commitment) => {
+                              const status = getCommitmentStatus(commitment.startDate);
+                              return (
+                                <Tr key={commitment.id}>
+                                  <Td>Red Hat OpenShift on AWS</Td>
+                                  <Td>{commitment.commitment}</Td>
+                                  <Td>${commitment.rate}</Td>
+                                  <Td>{new Date(commitment.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</Td>
+                                  <Td>
+                                    <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
+                                      <FlexItem>
+                                        <Label color={status.variant} isCompact>
+                                          {status.label}
+                                        </Label>
+                                      </FlexItem>
+                                      <FlexItem>
+                                        <span style={{ fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                          {status.daysInfo}
+                                        </span>
+                                      </FlexItem>
+                                    </Flex>
+                                  </Td>
+                                  <Td isActionCell>
+                                    <Button
+                                      variant="plain"
+                                      aria-label="Delete commitment"
+                                      onClick={() => {
+                                        setAwsCommitments(awsCommitments.filter(c => c.id !== commitment.id));
+                                      }}
+                                    >
+                                      <TimesIcon />
+                                    </Button>
+                                  </Td>
+                                </Tr>
+                              );
+                            })}
+                          </Tbody>
+                        </Table>
+                        </>
+                      )}
+                    </StackItem>
+                  </>
+                )}
 
-                  <Form>
-                    <FormGroup
-                      label="Commitment"
-                      fieldId="rosa-commitment"
-                    >
-                      <InputGroup style={{ maxWidth: '300px' }}>
-                        <InputGroupItem>
-                          <TextInput
-                            id="rosa-commitment"
-                            type="number"
-                            aria-label="ROSA commitment in vCPUs per month"
-                            placeholder="0"
-                            style={{ width: '120px' }}
-                          />
-                        </InputGroupItem>
-                        <InputGroupItem>
-                          <span style={{ 
-                            padding: '0 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            color: 'var(--pf-t--global--text--color--regular)'
-                          }}>
-                            vCPUs/month
-                          </span>
-                        </InputGroupItem>
-                      </InputGroup>
-                      <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
-                        Enter the total vCPUs you've committed to per month across all clusters. In the future, this may be auto-discovered from your AWS bill.
-                      </div>
-                    </FormGroup>
-                  </Form>
-                </StackItem>
+                {/* Create commitment form */}
+                {awsShowCreateCommitment && (
+                  <>
+                    <StackItem>
+                      <Content>
+                        <p>
+                          Enter your committed resources for Red Hat OpenShift on AWS. This commitment applies across all clusters associated with this AWS account.
+                        </p>
+                      </Content>
+                    </StackItem>
+
+                    <StackItem>
+                      <Card>
+                        <CardTitle>
+                          <Title headingLevel="h3" size="lg">
+                            Red Hat OpenShift on AWS
+                          </Title>
+                        </CardTitle>
+                        <CardBody>
+                          <Form>
+                            <Grid hasGutter span={6}>
+                              <GridItem>
+                                <FormGroup
+                                  label="Commitment"
+                                  fieldId="rosa-commitment"
+                                  isRequired
+                                >
+                                  <InputGroup style={{ maxWidth: '300px' }}>
+                                    <InputGroupItem>
+                                      <TextInput
+                                        id="rosa-commitment"
+                                        type="number"
+                                        aria-label="ROSA commitment in vCPUs per month"
+                                        placeholder="0"
+                                        value={awsNewCommitment}
+                                        onChange={(_event, value) => setAwsNewCommitment(value)}
+                                        style={{ width: '120px' }}
+                                      />
+                                    </InputGroupItem>
+                                    <InputGroupItem>
+                                      <span style={{ 
+                                        padding: '0 12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: 'var(--pf-t--global--text--color--regular)'
+                                      }}>
+                                        vCPUs/month
+                                      </span>
+                                    </InputGroupItem>
+                                  </InputGroup>
+                                  <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                    Enter the total vCPUs committed per month.
+                                  </div>
+                                </FormGroup>
+                              </GridItem>
+
+                              <GridItem>
+                                <FormGroup
+                                  label="Rate"
+                                  fieldId="rosa-rate"
+                                  isRequired
+                                >
+                                  <InputGroup style={{ maxWidth: '300px' }}>
+                                    <InputGroupItem>
+                                      <span style={{ 
+                                        padding: '8px 12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--pf-t--global--text--color--regular)',
+                                        backgroundColor: 'var(--pf-t--global--background--color--primary--default)',
+                                        border: '1px solid var(--pf-t--global--border--color--default)',
+                                        borderRadius: 'var(--pf-t--global--border--radius--small)',
+                                        minWidth: '40px'
+                                      }}>
+                                        $
+                                      </span>
+                                    </InputGroupItem>
+                                    <InputGroupItem>
+                                      <TextInput
+                                        id="rosa-rate"
+                                        type="number"
+                                        aria-label="Rate per vCPU"
+                                        placeholder="0.00"
+                                        value={awsNewRate}
+                                        onChange={(_event, value) => setAwsNewRate(value)}
+                                        style={{ width: '120px' }}
+                                      />
+                                    </InputGroupItem>
+                                    <InputGroupItem>
+                                      <span style={{ 
+                                        padding: '0 12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: 'var(--pf-t--global--text--color--regular)'
+                                      }}>
+                                        per vCPU
+                                      </span>
+                                    </InputGroupItem>
+                                  </InputGroup>
+                                  <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                    Enter the rate per vCPU.
+                                  </div>
+                                </FormGroup>
+                              </GridItem>
+                            </Grid>
+
+                            <FormGroup
+                              label="Start date"
+                              fieldId="contract-start-date"
+                              isRequired
+                            >
+                              <div style={{ display: 'inline-block', maxWidth: '184px' }}>
+                                <TextInput
+                                  id="contract-start-date"
+                                  type="date"
+                                  aria-label="Contract start date"
+                                  value={awsNewStartDate}
+                                  onChange={(_event, value) => setAwsNewStartDate(value)}
+                                />
+                              </div>
+                              <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                Specify when this monthly commitment begins.
+                              </div>
+                            </FormGroup>
+
+                            <ActionList>
+                              <ActionListItem>
+                                <Button
+                                  variant="primary"
+                                  onClick={() => {
+                                    if (awsNewCommitment && awsNewRate && awsNewStartDate) {
+                                      setAwsCommitments([
+                                        ...awsCommitments,
+                                        {
+                                          id: Date.now(),
+                                          commitment: awsNewCommitment,
+                                          rate: awsNewRate,
+                                          startDate: awsNewStartDate
+                                        }
+                                      ]);
+                                      setAwsNewCommitment('0');
+                                      setAwsNewRate('0');
+                                      setAwsNewStartDate('');
+                                      setAwsShowCreateCommitment(false);
+                                    }
+                                  }}
+                                  isDisabled={!awsNewCommitment || !awsNewRate || !awsNewStartDate || awsNewCommitment === '0' || awsNewRate === '0'}
+                                >
+                                  Create commitment
+                                </Button>
+                              </ActionListItem>
+                              <ActionListItem>
+                                <Button
+                                  variant="link"
+                                  onClick={() => {
+                                    setAwsNewCommitment('0');
+                                    setAwsNewRate('0');
+                                    setAwsNewStartDate('');
+                                    setAwsShowCreateCommitment(false);
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </ActionListItem>
+                            </ActionList>
+                          </Form>
+                        </CardBody>
+                      </Card>
+                    </StackItem>
+                  </>
+                )}
               </Stack>
             </WizardStep>
           )}
@@ -2106,11 +2384,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {awsIntegrations.map((integration) => (
+                      {awsIntegrations.map((integration, idx) => (
                         <Tr key={integration.id}>
                           <Td
                             select={{
-                              rowIndex: 0,
+                              rowIndex: idx,
                               onSelect: (_event, isSelecting) => {
                                 setWizardSelectedIntegrations(
                                   isSelecting
@@ -2123,7 +2401,13 @@ const CostManagementSettings: React.FunctionComponent = () => {
                             }}
                           />
                           <Td dataLabel="Name">{integration.name}</Td>
-                          <Td dataLabel="Cost model assigned">{integration.assignedCostModel}</Td>
+                          <Td dataLabel="Cost model assigned">
+                            {integration.assignedCostModel ? (
+                              dataService.getCostModelById(integration.assignedCostModel)?.name || integration.assignedCostModel
+                            ) : (
+                              <span style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>None</span>
+                            )}
+                          </Td>
                         </Tr>
                       ))}
                     </Tbody>
@@ -2217,69 +2501,6 @@ const CostManagementSettings: React.FunctionComponent = () => {
                       </StackItem>
 
                       <StackItem>
-                        <Toolbar id="price-list-toolbar" style={{ gap: '1rem' }}>
-                          <ToolbarContent>
-                            <ToolbarGroup>
-                              <ToolbarItem>
-                                <Select
-                                  toggle={(toggleRef: React.Ref<any>) => (
-                                    <MenuToggle
-                                      ref={toggleRef}
-                                      onClick={() => {}}
-                                      isExpanded={false}
-                                      isDisabled={ocpPriceListRates.length === 0}
-                                      style={{ width: '200px' }}
-                                    >
-                                      Metric
-                                    </MenuToggle>
-                                  )}
-                                  isOpen={false}
-                                >
-                                  <SelectList>
-                                    <SelectOption value="">Select metric</SelectOption>
-                                  </SelectList>
-                                </Select>
-                              </ToolbarItem>
-                              <ToolbarItem></ToolbarItem>
-                              <ToolbarItem>
-                                <Select
-                                  toggle={(toggleRef: React.Ref<any>) => (
-                                    <MenuToggle
-                                      ref={toggleRef}
-                                      onClick={() => {}}
-                                      isExpanded={false}
-                                      isDisabled={ocpPriceListRates.length === 0}
-                                    >
-                                      Filter by metrics
-                                    </MenuToggle>
-                                  )}
-                                  isOpen={false}
-                                >
-                                  <SelectList>
-                                    <SelectOption value="">Select filter</SelectOption>
-                                  </SelectList>
-                                </Select>
-                              </ToolbarItem>
-                            </ToolbarGroup>
-                            <ToolbarItem>
-                              <Button variant="primary" onClick={() => setOcpShowCreateRate(true)}>
-                                Create rate
-                              </Button>
-                            </ToolbarItem>
-                            <ToolbarItem variant="pagination">
-                              <Pagination
-                                itemCount={ocpPriceListRates.length}
-                                perPage={10}
-                                page={1}
-                                variant={PaginationVariant.top}
-                                titles={{
-                                  paginationAriaLabel: 'Assign integrations top pagination',
-                                }}
-                              />
-                            </ToolbarItem>
-                          </ToolbarContent>
-                        </Toolbar>
-
                         {ocpPriceListRates.length === 0 ? (
                           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
                             <div style={{ textAlign: 'center', maxWidth: '400px' }}>
@@ -2291,14 +2512,80 @@ const CostManagementSettings: React.FunctionComponent = () => {
                               <Title headingLevel="h2" size="lg" style={{ marginBottom: '8px' }}>
                                 A price list has not been created.
                               </Title>
-                              <div>
+                              <div style={{ marginBottom: '16px' }}>
                                 To skip this step, click the <strong>next</strong> button.<br />
                                 You can create a price list or modify one at a later time.
                               </div>
+                              <Button variant="primary" onClick={() => setOcpShowCreateRate(true)}>
+                                Create rate
+                              </Button>
                             </div>
                           </div>
                         ) : (
                           <>
+                            <Toolbar id="price-list-toolbar" style={{ gap: '1rem' }}>
+                              <ToolbarContent>
+                                <ToolbarGroup>
+                                  <ToolbarItem>
+                                    <Select
+                                      toggle={(toggleRef: React.Ref<any>) => (
+                                        <MenuToggle
+                                          ref={toggleRef}
+                                          onClick={() => {}}
+                                          isExpanded={false}
+                                          isDisabled={ocpPriceListRates.length === 0}
+                                          style={{ width: '200px' }}
+                                        >
+                                          Metric
+                                        </MenuToggle>
+                                      )}
+                                      isOpen={false}
+                                    >
+                                      <SelectList>
+                                        <SelectOption value="">Select metric</SelectOption>
+                                      </SelectList>
+                                    </Select>
+                                  </ToolbarItem>
+                                  <ToolbarItem></ToolbarItem>
+                                  <ToolbarItem>
+                                    <Select
+                                      toggle={(toggleRef: React.Ref<any>) => (
+                                        <MenuToggle
+                                          ref={toggleRef}
+                                          onClick={() => {}}
+                                          isExpanded={false}
+                                          isDisabled={ocpPriceListRates.length === 0}
+                                        >
+                                          Filter by metrics
+                                        </MenuToggle>
+                                      )}
+                                      isOpen={false}
+                                    >
+                                      <SelectList>
+                                        <SelectOption value="">Select filter</SelectOption>
+                                      </SelectList>
+                                    </Select>
+                                  </ToolbarItem>
+                                </ToolbarGroup>
+                                <ToolbarItem>
+                                  <Button variant="primary" onClick={() => setOcpShowCreateRate(true)}>
+                                    Create rate
+                                  </Button>
+                                </ToolbarItem>
+                                <ToolbarItem variant="pagination">
+                                  <Pagination
+                                    itemCount={ocpPriceListRates.length}
+                                    perPage={10}
+                                    page={1}
+                                    variant={PaginationVariant.top}
+                                    titles={{
+                                      paginationAriaLabel: 'Assign integrations top pagination',
+                                    }}
+                                  />
+                                </ToolbarItem>
+                              </ToolbarContent>
+                            </Toolbar>
+                            
                             <Table aria-label="Price list rates table">
                               <Thead>
                                 <Tr>

@@ -1798,5 +1798,67 @@
       "includeInReports": true,
       "excludeFromOptimization": true
     }
+  },
+  "integrations": {
+    "aws": [
+      {
+        "id": "aws-prod-integration",
+        "name": "AWS Production Account",
+        "type": "Amazon Web Services",
+        "accountId": "123456789012",
+        "assignedCostModel": "aws-enterprise-discount",
+        "status": "active",
+        "lastSync": "2024-10-24T08:30:00Z"
+      },
+      {
+        "id": "aws-dev-integration",
+        "name": "AWS Development Account",
+        "type": "Amazon Web Services",
+        "accountId": "234567890123",
+        "assignedCostModel": "",
+        "status": "active",
+        "lastSync": "2024-10-24T08:25:00Z"
+      }
+    ],
+    "gcp": [
+      {
+        "id": "gcp-prod-integration",
+        "name": "GCP Production",
+        "type": "Google Cloud Platform",
+        "billingAccountId": "01AB23-CD45EF-67890G",
+        "assignedCostModel": "gcp-committed-use",
+        "status": "active",
+        "lastSync": "2024-10-24T08:35:00Z"
+      },
+      {
+        "id": "gcp-ml-integration",
+        "name": "GCP Machine Learning",
+        "type": "Google Cloud Platform",
+        "billingAccountId": "98ZY76-XW54VU-32109T",
+        "assignedCostModel": "",
+        "status": "active",
+        "lastSync": "2024-10-24T08:32:00Z"
+      }
+    ],
+    "azure": [
+      {
+        "id": "azure-prod-integration",
+        "name": "Azure Production Subscription",
+        "type": "Microsoft Azure",
+        "subscriptionId": "abcd1234-5678-90ef-ghij-klmnopqrstuv",
+        "assignedCostModel": "azure-reserved-instances",
+        "status": "active",
+        "lastSync": "2024-10-24T08:28:00Z"
+      },
+      {
+        "id": "azure-dev-integration",
+        "name": "Azure Development Subscription",
+        "type": "Microsoft Azure",
+        "subscriptionId": "wxyz9876-5432-10ab-cdef-ghijklmnopqrs",
+        "assignedCostModel": "",
+        "status": "active",
+        "lastSync": "2024-10-24T08:22:00Z"
+      }
+    ]
   }
 }
