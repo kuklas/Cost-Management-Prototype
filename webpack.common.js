@@ -93,7 +93,10 @@ export default (env) => {
         silent: true,
       }),
       new CopyPlugin({
-        patterns: [{ from: './src/favicon.png', to: 'images' }],
+        patterns: [
+          { from: './src/favicon.png', to: 'images' },
+          { from: './public/.nojekyll', to: '.nojekyll', noErrorOnMissing: true }
+        ],
       }),
     ],
     resolve: {
