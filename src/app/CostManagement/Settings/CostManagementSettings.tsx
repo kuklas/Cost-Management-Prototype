@@ -60,6 +60,7 @@ import {
   TimesIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
+import { dataService } from '@app/data/dataService';
 
 interface CostModel {
   id: string;
@@ -162,135 +163,78 @@ const CostManagementSettings: React.FunctionComponent = () => {
     { id: 'aws-redhat', name: 'AWS Red Hat Cost Management', assignedCostModel: 'AWS markup' },
   ];
 
-  // Mock data
-  const costModels: CostModel[] = [
-    {
-      id: 'fa5e69fd-f312-4bf4-bc51-66c268336951',
-      name: 'advanced',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 1,
-      lastUpdated: 'Jun 4, 2025, 13:37 UTC',
-    },
-    {
-      id: 'bf01db62-8946-453a-81b8-388438cf131c',
-      name: 'Aplikace',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 0,
-      lastUpdated: 'Jun 26, 2025, 07:15 UTC',
-    },
-    {
-      id: '6f868174-9ccd-4a88-b8a5-ff60453dd189',
-      name: 'Aplikace',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 0,
-      lastUpdated: 'Jul 4, 2025, 08:53 UTC',
-    },
-    {
-      id: '7795f11b-c225-496e-a475-b39863044903',
-      name: 'AWS markup',
-      description: 'A 100% markup on top of costs provided by AWS',
-      integration: 'Amazon Web Services',
-      assignedIntegrations: 1,
-      lastUpdated: 'Feb 7, 2023, 10:56 UTC',
-    },
-    {
-      id: '7548f6a1-f812-41be-8e92-2bad146b0f08',
-      name: 'Azure',
-      description: '',
-      integration: 'Microsoft Azure',
-      assignedIntegrations: 2,
-      lastUpdated: 'Jul 4, 2025, 08:14 UTC',
-    },
-    {
-      id: 'a1a02767-0371-4b0c-a7a1-692fe14a076a',
-      name: 'AzureClusterCostModel',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 0,
-      lastUpdated: 'Jan 16, 2024, 11:19 UTC',
-    },
-    {
-      id: 'd4bb1e96-282b-480a-adbf-bba46abf1d58',
-      name: 'Cost Model',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 1,
-      lastUpdated: 'May 15, 2025, 21:34 UTC',
-    },
-    {
-      id: 'c8c1ca07-1036-4370-9c08-ecde1941c182',
-      name: 'Distribute full cost',
-      description: 'Distribute platform and unallocated costs',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 0,
-      lastUpdated: 'Jan 30, 2025, 03:19 UTC',
-    },
-    {
-      id: '048fa4f2-6410-4b7c-83e4-2794c9646c35',
-      name: 'Effective cost demo',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 1,
-      lastUpdated: 'Jan 30, 2025, 14:29 UTC',
-    },
-    {
-      id: 'd407deb1-e791-4465-9600-31fc5bd99a2f',
-      name: 'Go Operator',
-      description: '',
-      integration: 'OpenShift Container Platform',
-      assignedIntegrations: 2,
-      lastUpdated: 'Apr 5, 2024, 13:54 UTC',
-    },
-  ];
+  // Get cost models from database
+  const dbCostModels = dataService.getAllCostModels();
+  
+  // Count how many integrations use each cost model
+  const getCostModelUsage = (modelId: string): number => {
+    const clusters = dataService.getAllClusters();
+    const awsAccounts = dataService.getAWSAccounts();
+    const gcpAccounts = dataService.getGCPAccounts();
+    const azureAccounts = dataService.getAzureAccounts();
 
-  const totalItems = 26;
+    let count = 0;
+    count += clusters.filter(c => c.costModelId === modelId).length;
+    count += awsAccounts.filter(a => a.costModelId === modelId).length;
+    count += gcpAccounts.filter(a => a.costModelId === modelId).length;
+    count += azureAccounts.filter(a => a.costModelId === modelId).length;
 
-  // Mock tags data
-  const tags: TagItem[] = [
-    { id: '1', name: '3.8', status: 'disabled', integration: 'Amazon Web Services' },
-    { id: '2', name: 'a', status: 'enabled', integration: 'OpenShift' },
-    { id: '3', name: 'A', status: 'disabled', integration: 'Amazon Web Services' },
-    { id: '4', name: 'aa', status: 'disabled', integration: 'Amazon Web Services' },
-    { id: '5', name: 'ability', status: 'enabled', integration: 'OpenShift' },
-    { id: '6', name: 'able', status: 'enabled', integration: 'OpenShift' },
-    { id: '7', name: 'about', status: 'enabled', integration: 'OpenShift' },
-    { id: '8', name: 'above', status: 'disabled', integration: 'OpenShift' },
-    { id: '9', name: 'accept', status: 'disabled', integration: 'OpenShift' },
-    { id: '10', name: 'Access', status: 'enabled', integration: 'Amazon Web Services' },
-  ];
-  const totalTags = 1973;
+    return count;
+  };
 
-  // Mock categories data
-  const categories: CategoryItem[] = [
-    { id: '1', name: 'Charge type', status: 'enabled' },
-    { id: '2', name: 'CostCenter', status: 'enabled' },
-    { id: '3', name: 'cost_env', status: 'enabled' },
-    { id: '4', name: 'name', status: 'enabled' },
-    { id: '5', name: 'Organization', status: 'enabled' },
-    { id: '6', name: 'OUs', status: 'enabled' },
-    { id: '7', name: 'qe_source', status: 'enabled' },
-  ];
-  const totalCategories = 7;
+  // Transform database cost models to UI format
+  const costModels: CostModel[] = dbCostModels.map(model => ({
+    id: model.id,
+    name: model.name,
+    description: model.description,
+    integration: model.sourceType,
+    assignedIntegrations: getCostModelUsage(model.id),
+    lastUpdated: model.lastModified,
+  }));
 
-  // Mock platform projects data
-  const projects: PlatformProject[] = [
-    { id: '1', name: 'america', isDefault: false, group: 'Platform', clusters: ['demolab'] },
-    { id: '2', name: 'Berlin', isDefault: false, group: 'Platform', clusters: ['OCP-OnPrem01'] },
-    { id: '3', name: 'Boston', isDefault: false, group: 'Platform', clusters: ['OCP-OnPrem01'] },
-    { id: '4', name: 'Cary', isDefault: false, group: 'Platform', clusters: ['OCP-OnPrem01'] },
-    { id: '5', name: 'catalog', isDefault: false, group: 'Platform', clusters: ['Openshift on AWS'] },
-    { id: '6', name: 'europe', isDefault: false, group: 'Platform', clusters: ['demolab'] },
-    { id: '7', name: 'Garner', isDefault: false, group: 'Platform', clusters: ['OCP-OnPrem01'] },
-    { id: '8', name: 'kube-system', isDefault: true, group: 'Platform', clusters: ['OCP-OnPrem01', 'OpenShift on GCP - Nise Populator'] },
-    { id: '9', name: 'nvidia-gpu-operator', isDefault: false, group: 'Platform', clusters: ['demolab'] },
-    { id: '10', name: 'openshift', isDefault: true, group: 'Platform', clusters: ['OCP-OnPrem01', 'OpenShift on GCP - Nise Populator'] },
-  ];
-  const totalProjects = 137;
+  const totalItems = costModels.length;
 
-  // Mock map tags data
+  // Get tags from database
+  const dbTags = dataService.getAllTags();
+  
+  // Transform database tags to UI format - expand each tag with its values for pagination
+  const tags: TagItem[] = dbTags.flatMap(tag => 
+    tag.values.map((value, index) => ({
+      id: `${tag.id}-${index}`,
+      name: `${tag.key}:${value}`,
+      status: (tag.enabled ? 'enabled' : 'disabled') as 'enabled' | 'disabled',
+      integration: tag.integrations.join(', '),
+    }))
+  );
+  const totalTags = tags.length;
+
+  // Get cost categories from database
+  const dbCategories = dataService.getAllCostCategories();
+  
+  // Transform database categories to UI format
+  const categories: CategoryItem[] = dbCategories.map(category => ({
+    id: category.id,
+    name: category.name,
+    status: (category.enabled ? 'enabled' : 'disabled') as 'enabled' | 'disabled',
+  }));
+  const totalCategories = categories.length;
+
+  // Get platform projects from database
+  const dbPlatformProjects = dataService.getAllPlatformProjects();
+  const allClusters = dataService.getAllClusters();
+  
+  // Transform database platform projects to UI format
+  // Show all clusters for platform projects (they apply to all)
+  const projects: PlatformProject[] = dbPlatformProjects.map(project => ({
+    id: project.id,
+    name: project.name,
+    isDefault: project.isPlatformOverhead,
+    group: project.type === 'platform' ? 'Platform' : 'Unallocated',
+    clusters: allClusters.map(c => c.displayName), // Platform projects apply to all clusters
+  }));
+  const totalProjects = projects.length;
+
+  // Tag mappings data
   interface TagMapping {
     id: string;
     parentTag: string;
@@ -298,95 +242,20 @@ const CostManagementSettings: React.FunctionComponent = () => {
     childTags: Array<{ name: string; integration: string }>;
   }
 
-  const tagMappings: TagMapping[] = [
-    {
-      id: '1',
-      parentTag: 'able',
-      integration: 'OpenShift',
-      childTags: [{ name: 'ability', integration: 'OpenShift' }],
-    },
-    {
-      id: '2',
-      parentTag: 'Access',
-      integration: 'Amazon Web Services',
-      childTags: [
-        { name: 'AccessTag', integration: 'Amazon Web Services' },
-        { name: 'anewtag', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '3',
-      parentTag: 'another',
-      integration: 'Amazon Web Services',
-      childTags: [
-        { name: 'Another', integration: 'Amazon Web Services' },
-        { name: 'another_tag', integration: 'Amazon Web Services' },
-        { name: 'AnotherTag', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '4',
-      parentTag: 'ansible-workshops',
-      integration: 'Amazon Web Services',
-      childTags: [
-        { name: 'ansible-test', integration: 'Amazon Web Services' },
-        { name: 'AnsibleTest', integration: 'Amazon Web Services' },
-        { name: 'AnsibleUser', integration: 'Amazon Web Services' },
-        { name: 'Ansible_Workshops', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '5',
-      parentTag: 'api',
-      integration: 'OpenShift',
-      childTags: [
-        { name: 'aws-account-operator', integration: 'Amazon Web Services' },
-        { name: 'AWSEndpointService', integration: 'Amazon Web Services' },
-        { name: 'aws_instance_count', integration: 'Amazon Web Services' },
-        { name: 'Backup-type', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '6',
-      parentTag: 'app',
-      integration: 'Microsoft Azure',
-      childTags: [
-        { name: 'app', integration: 'Amazon Web Services' },
-        { name: 'app', integration: 'OpenShift' },
-        { name: 'app', integration: 'Google Cloud' },
-        { name: 'App', integration: 'Amazon Web Services' },
-        { name: 'appcode', integration: 'Amazon Web Services' },
-        { name: 'app-code', integration: 'Amazon Web Services' },
-        { name: 'Appcode', integration: 'Amazon Web Services' },
-        { name: 'Appcode ', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '7',
-      parentTag: 'application',
-      integration: 'OpenShift',
-      childTags: [
-        { name: 'app-code', integration: 'Microsoft Azure' },
-        { name: 'AppCode', integration: 'Amazon Web Services' },
-        { name: 'App Code', integration: 'Amazon Web Services' },
-        { name: 'Application', integration: 'Amazon Web Services' },
-        { name: 'AppName', integration: 'Amazon Web Services' },
-      ],
-    },
-    {
-      id: '8',
-      parentTag: 'env',
-      integration: 'Google Cloud',
-      childTags: [
-        { name: 'environment', integration: 'Amazon Web Services' },
-        { name: 'environment', integration: 'OpenShift' },
-        { name: 'environment', integration: 'Microsoft Azure' },
-        { name: 'environment', integration: 'Google Cloud' },
-        { name: 'Environment', integration: 'Amazon Web Services' },
-      ],
-    },
-  ];
-  const totalMapTags = 8;
+  // Get tag mappings from database
+  const dbTagMappings = dataService.getAllTagMappings();
+  
+  // Transform database tag mappings to UI format
+  const tagMappings: TagMapping[] = dbTagMappings.map(mapping => ({
+    id: mapping.id,
+    parentTag: mapping.parentKey,
+    integration: 'Multi-cloud', // Mappings apply across providers
+    childTags: mapping.childKeys.map(child => ({
+      name: child.key,
+      integration: child.source,
+    })),
+  }));
+  const totalMapTags = tagMappings.length;
 
   const handleTabClick = (
     event: React.MouseEvent<any> | React.KeyboardEvent | MouseEvent,
