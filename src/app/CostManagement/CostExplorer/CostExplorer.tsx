@@ -126,23 +126,23 @@ const CostExplorer: React.FunctionComponent = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth(); // 0-indexed
-    const monthName = now.toLocaleDateString('en-US', { month: 'short' });
+    const monthName = now.toLocaleDateString('en-US', { month: 'long' });
     const currentDay = now.getDate();
     
     if (billingPerspective === 'calendar') {
-      // Standard calendar month
-      return `${monthName} 1–${currentDay}`;
+      // Standard calendar month - use full month name
+      return `${monthName} 1 – ${currentDay}`;
     } else {
       // Billing with buffer
       const prevMonth = month === 0 ? 11 : month - 1;
       const prevMonthYear = month === 0 ? year - 1 : year;
-      const prevMonthName = new Date(prevMonthYear, prevMonth).toLocaleDateString('en-US', { month: 'short' });
+      const prevMonthName = new Date(prevMonthYear, prevMonth).toLocaleDateString('en-US', { month: 'long' });
       const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
       
       // Calculate start date based on buffer (days before month end)
       const bufferStart = lastDayOfPrevMonth - (bufferDays.before - 1);
       
-      return `${prevMonthName} ${bufferStart}–${monthName} ${currentDay}`;
+      return `${prevMonthName} ${bufferStart} – ${monthName} ${currentDay}`;
     }
   };
   
@@ -326,7 +326,7 @@ const CostExplorer: React.FunctionComponent = () => {
           {/* Title and Currency Row */}
           <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Title headingLevel="h1" size="2xl" style={{ paddingBottom: 'var(--pf-t--global--spacer--sm)' }}>
+              <Title headingLevel="h1" size="2xl">
                 Cost Explorer
               </Title>
             </FlexItem>
@@ -358,231 +358,225 @@ const CostExplorer: React.FunctionComponent = () => {
             </FlexItem>
           </Flex>
 
-          {/* Controls Row */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
-            <FlexItem>
-              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <FlexItem>
-                  <div style={{ paddingTop: 'var(--pf-t--global--spacer--sm)' }}>
-                    <Toolbar id="cost-explorer-top-toolbar">
-                      <ToolbarContent>
-                        <ToolbarToggleGroup toggleIcon={<FilterIcon />} breakpoint="xl">
-                          <ToolbarGroup variant="filter-group">
-                            <ToolbarItem>
-                              <Select
-                                isOpen={categoryOpen}
-                                onSelect={() => setCategoryOpen(false)}
-                                onOpenChange={(isOpen) => setCategoryOpen(isOpen)}
-                                toggle={(toggleRef) => (
-                                  <MenuToggle
-                                    ref={toggleRef}
-                                    onClick={() => setCategoryOpen(!categoryOpen)}
-                                    isExpanded={categoryOpen}
-                                    icon={<FilterIcon />}
-                                  >
-                                    Project
-                                  </MenuToggle>
-                                )}
-                              >
-                                <SelectList>
-                                  <SelectOption value="Project">Project</SelectOption>
-                                  <SelectOption value="Cluster">Cluster</SelectOption>
-                                </SelectList>
-                              </Select>
-                            </ToolbarItem>
-                            <ToolbarItem>
-                              <Select
-                                isOpen={operatorOpen}
-                                onSelect={() => setOperatorOpen(false)}
-                                onOpenChange={(isOpen) => setOperatorOpen(isOpen)}
-                                toggle={(toggleRef) => (
-                                  <MenuToggle
-                                    ref={toggleRef}
-                                    onClick={() => setOperatorOpen(!operatorOpen)}
-                                    isExpanded={operatorOpen}
-                                  >
-                                    includes
-                                  </MenuToggle>
-                                )}
-                              >
-                                <SelectList>
-                                  <SelectOption value="includes">includes</SelectOption>
-                                  <SelectOption value="excludes">excludes</SelectOption>
-                                </SelectList>
-                              </Select>
-                            </ToolbarItem>
-                            <ToolbarItem>
-                              <SearchInput
-                                placeholder="Filter by project"
-                                value={searchValue}
-                                onChange={(_event, value) => setSearchValue(value)}
-                                onClear={() => setSearchValue('')}
-                              />
-                            </ToolbarItem>
-                          </ToolbarGroup>
-                        </ToolbarToggleGroup>
-
-                        <ToolbarGroup>
-                          <ToolbarItem>
-                            <Select
-                              isOpen={dateRangeOpen}
-                              onSelect={() => setDateRangeOpen(false)}
-                              onOpenChange={(isOpen) => setDateRangeOpen(isOpen)}
-                              toggle={(toggleRef) => (
-                                <MenuToggle
-                                  ref={toggleRef}
-                                  onClick={() => setDateRangeOpen(!dateRangeOpen)}
-                                  isExpanded={dateRangeOpen}
-                                >
-                                  Month to date
-                                </MenuToggle>
-                              )}
-                            >
-                              <SelectList>
-                                <SelectOption value="mtd">Month to date</SelectOption>
-                                <SelectOption value="ytd">Year to date</SelectOption>
-                              </SelectList>
-                            </Select>
-                          </ToolbarItem>
-                        </ToolbarGroup>
-                      </ToolbarContent>
-                    </Toolbar>
-                  </div>
-                </FlexItem>
-              </Flex>
-            </FlexItem>
-
-            <FlexItem>
-              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                {/* Period Type */}
-                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-                    Period type
-                  </Title>
-                  <Select
-                    isOpen={billingPerspectiveOpen}
-                    onSelect={(_event, value) => {
-                      setBillingPerspective(value as 'calendar' | 'billing');
-                      setBillingPerspectiveOpen(false);
-                    }}
-                    onOpenChange={(isOpen) => setBillingPerspectiveOpen(isOpen)}
-                    selected={billingPerspective}
-                    toggle={(toggleRef) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setBillingPerspectiveOpen(!billingPerspectiveOpen)}
-                        isExpanded={billingPerspectiveOpen}
-                      >
-                        {billingPerspective === 'calendar' ? 'Calendar' : 'Billing'}
-                      </MenuToggle>
-                    )}
+          {/* Second Row: Perspective, Group by, Overhead cost */}
+          <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+            {/* Perspective */}
+            <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+              <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                Perspective
+              </Title>
+              <Select
+                isOpen={perspectiveOpen}
+                onSelect={() => setPerspectiveOpen(false)}
+                onOpenChange={(isOpen) => setPerspectiveOpen(isOpen)}
+                toggle={(toggleRef) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={() => setPerspectiveOpen(!perspectiveOpen)}
+                    isExpanded={perspectiveOpen}
                   >
-                    <SelectList>
-                      <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month). Shows when services were used.">
-                        Calendar
-                      </SelectOption>
-                      <SelectOption 
-                        value="billing" 
-                        description={
-                          <>
-                            Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to="/cost-management/settings">Customize in Settings</Link>.
-                          </>
-                        }
-                      >
-                        Billing
-                      </SelectOption>
-                    </SelectList>
-                  </Select>
-                </Flex>
+                    All OpenShift
+                  </MenuToggle>
+                )}
+              >
+                <SelectList>
+                  <SelectOption value="all">All OpenShift</SelectOption>
+                </SelectList>
+              </Select>
+            </Flex>
 
-                {/* Perspective */}
-                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-                    Perspective
-                  </Title>
-                  <Select
-                    isOpen={perspectiveOpen}
-                    onSelect={() => setPerspectiveOpen(false)}
-                    onOpenChange={(isOpen) => setPerspectiveOpen(isOpen)}
-                    toggle={(toggleRef) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setPerspectiveOpen(!perspectiveOpen)}
-                        isExpanded={perspectiveOpen}
-                      >
-                        All OpenShift
-                      </MenuToggle>
-                    )}
+            {/* Group by */}
+            <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+              <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                Group by
+              </Title>
+              <Select
+                isOpen={groupByOpen}
+                onSelect={() => setGroupByOpen(false)}
+                onOpenChange={(isOpen) => setGroupByOpen(isOpen)}
+                toggle={(toggleRef) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={() => setGroupByOpen(!groupByOpen)}
+                    isExpanded={groupByOpen}
                   >
-                    <SelectList>
-                      <SelectOption value="all">All OpenShift</SelectOption>
-                    </SelectList>
-                  </Select>
-                </Flex>
+                    Project
+                  </MenuToggle>
+                )}
+              >
+                <SelectList>
+                  <SelectOption value="Project">Project</SelectOption>
+                  <SelectOption value="Cluster">Cluster</SelectOption>
+                </SelectList>
+              </Select>
+            </Flex>
 
-                {/* Group by */}
-                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-                    Group by
-                  </Title>
-                  <Select
-                    isOpen={groupByOpen}
-                    onSelect={() => setGroupByOpen(false)}
-                    onOpenChange={(isOpen) => setGroupByOpen(isOpen)}
-                    toggle={(toggleRef) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setGroupByOpen(!groupByOpen)}
-                        isExpanded={groupByOpen}
-                      >
-                        Project
-                      </MenuToggle>
-                    )}
+            {/* Overhead cost */}
+            <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+              <Title headingLevel="h2" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                Overhead cost
+              </Title>
+              <Select
+                isOpen={overheadOpen}
+                onSelect={() => setOverheadOpen(false)}
+                onOpenChange={(isOpen) => setOverheadOpen(isOpen)}
+                toggle={(toggleRef) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={() => setOverheadOpen(!overheadOpen)}
+                    isExpanded={overheadOpen}
                   >
-                    <SelectList>
-                      <SelectOption value="Project">Project</SelectOption>
-                      <SelectOption value="Cluster">Cluster</SelectOption>
-                    </SelectList>
-                  </Select>
-                </Flex>
-
-                {/* Overhead cost */}
-                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                  <Title headingLevel="h2" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-                    Overhead cost
-                  </Title>
-                  <Select
-                    isOpen={overheadOpen}
-                    onSelect={() => setOverheadOpen(false)}
-                    onOpenChange={(isOpen) => setOverheadOpen(isOpen)}
-                    toggle={(toggleRef) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setOverheadOpen(!overheadOpen)}
-                        isExpanded={overheadOpen}
-                      >
-                        Distribute through cost models
-                      </MenuToggle>
-                    )}
-                  >
-                    <SelectList>
-                      <SelectOption value="distribute">Distribute through cost models</SelectOption>
-                    </SelectList>
-                  </Select>
-                </Flex>
-              </Flex>
-            </FlexItem>
+                    Distribute through cost models
+                  </MenuToggle>
+                )}
+              >
+                <SelectList>
+                  <SelectOption value="distribute">Distribute through cost models</SelectOption>
+                </SelectList>
+              </Select>
+            </Flex>
           </Flex>
 
-          {/* Total Cost Display */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
+          {/* Third Row: Filters and Total Cost */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Title headingLevel="h2" size="4xl" style={{ marginTop: 0, marginBottom: 0 }}>
-                $85,930.55
-              </Title>
+              <Toolbar id="cost-explorer-top-toolbar">
+                <ToolbarContent>
+                  <ToolbarToggleGroup toggleIcon={<FilterIcon />} breakpoint="xl">
+                    <ToolbarGroup variant="filter-group">
+                      <ToolbarItem>
+                        <Select
+                          isOpen={categoryOpen}
+                          onSelect={() => setCategoryOpen(false)}
+                          onOpenChange={(isOpen) => setCategoryOpen(isOpen)}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() => setCategoryOpen(!categoryOpen)}
+                              isExpanded={categoryOpen}
+                              icon={<FilterIcon />}
+                            >
+                              Project
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            <SelectOption value="Project">Project</SelectOption>
+                            <SelectOption value="Cluster">Cluster</SelectOption>
+                          </SelectList>
+                        </Select>
+                      </ToolbarItem>
+                      <ToolbarItem>
+                        <Select
+                          isOpen={operatorOpen}
+                          onSelect={() => setOperatorOpen(false)}
+                          onOpenChange={(isOpen) => setOperatorOpen(isOpen)}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() => setOperatorOpen(!operatorOpen)}
+                              isExpanded={operatorOpen}
+                            >
+                              includes
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            <SelectOption value="includes">includes</SelectOption>
+                            <SelectOption value="excludes">excludes</SelectOption>
+                          </SelectList>
+                        </Select>
+                      </ToolbarItem>
+                      <ToolbarItem>
+                        <SearchInput
+                          placeholder="Filter by project"
+                          value={searchValue}
+                          onChange={(_event, value) => setSearchValue(value)}
+                          onClear={() => setSearchValue('')}
+                        />
+                      </ToolbarItem>
+                    </ToolbarGroup>
+                  </ToolbarToggleGroup>
+
+                  <ToolbarGroup>
+                    <ToolbarItem>
+                      <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                        <Title headingLevel="h2" size="md">
+                          Period type
+                        </Title>
+                        <Select
+                          isOpen={billingPerspectiveOpen}
+                          onSelect={(_event, value) => {
+                            setBillingPerspective(value as 'calendar' | 'billing');
+                            setBillingPerspectiveOpen(false);
+                          }}
+                          onOpenChange={(isOpen) => setBillingPerspectiveOpen(isOpen)}
+                          selected={billingPerspective}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() => setBillingPerspectiveOpen(!billingPerspectiveOpen)}
+                              isExpanded={billingPerspectiveOpen}
+                            >
+                              {billingPerspective === 'calendar' ? 'Calendar' : 'Billing'}
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month). Shows when services were used.">
+                              Calendar
+                            </SelectOption>
+                            <SelectOption 
+                              value="billing" 
+                              description={
+                                <>
+                                  Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to="/cost-management/settings">Customize in Settings</Link>.
+                                </>
+                              }
+                            >
+                              Billing
+                            </SelectOption>
+                          </SelectList>
+                        </Select>
+                      </Flex>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                      <Select
+                        isOpen={dateRangeOpen}
+                        onSelect={() => setDateRangeOpen(false)}
+                        onOpenChange={(isOpen) => setDateRangeOpen(isOpen)}
+                        toggle={(toggleRef) => (
+                          <MenuToggle
+                            ref={toggleRef}
+                            onClick={() => setDateRangeOpen(!dateRangeOpen)}
+                            isExpanded={dateRangeOpen}
+                          >
+                            Month to date
+                          </MenuToggle>
+                        )}
+                      >
+                        <SelectList>
+                          <SelectOption value="mtd">Month to date</SelectOption>
+                          <SelectOption value="ytd">Year to date</SelectOption>
+                        </SelectList>
+                      </Select>
+                    </ToolbarItem>
+                  </ToolbarGroup>
+                </ToolbarContent>
+              </Toolbar>
             </FlexItem>
-            <FlexItem style={{ textAlign: 'end' }}>
-              {dateRangeText}
+
+            <FlexItem>
+              <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
+                <FlexItem>
+                  <Title headingLevel="h2" size="4xl" style={{ marginTop: 0, marginBottom: 0 }}>
+                    $91,265.28
+                  </Title>
+                </FlexItem>
+                <FlexItem>
+                  {dateRangeText}
+                </FlexItem>
+              </Flex>
             </FlexItem>
           </Flex>
         </Flex>

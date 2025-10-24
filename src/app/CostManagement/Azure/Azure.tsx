@@ -23,9 +23,6 @@ import {
   FlexItem,
   Checkbox,
   Label,
-  Popover,
-  Divider,
-  SelectGroup,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import {
@@ -36,7 +33,6 @@ import {
   PauseIcon,
   SortAmountDownIcon,
   SortAmountUpIcon,
-  OutlinedQuestionCircleIcon,
   ExclamationTriangleIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
@@ -65,7 +61,7 @@ const Azure: React.FunctionComponent = () => {
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
   const [groupByOpen, setGroupByOpen] = React.useState(false);
   const [dateRangeOpen, setDateRangeOpen] = React.useState(false);
-  const [dateRange, setDateRange] = React.useState('calendar-mtd');
+  const [dateRange, setDateRange] = React.useState('mtd');
   const [categoryOpen, setCategoryOpen] = React.useState(false);
   const [operatorOpen, setOperatorOpen] = React.useState(false);
   const [perspectiveOpen, setPerspectiveOpen] = React.useState(false);
@@ -367,62 +363,24 @@ const Azure: React.FunctionComponent = () => {
                     onOpenChange={(isOpen) => setDateRangeOpen(isOpen)}
                     selected={dateRange}
                     toggle={(toggleRef) => (
-                      <MenuToggle
-                        ref={toggleRef}
-                        onClick={() => setDateRangeOpen(!dateRangeOpen)}
+                      <MenuToggle 
+                        ref={toggleRef} 
+                        onClick={() => setDateRangeOpen(!dateRangeOpen)} 
                         isExpanded={dateRangeOpen}
                       >
-                        {dateRange === 'calendar-mtd' ? 'Calendar month to date' :
-                         dateRange === 'calendar-this' ? 'This month' :
-                         dateRange === 'calendar-prev' ? 'Previous month' :
-                         dateRange === 'billing-mtd' ? 'Billing month to date' :
-                         dateRange === 'billing-this' ? 'This billing month' :
-                         dateRange === 'billing-prev' ? 'Previous billing month' :
-                         'Calendar month to date'}
+                        {dateRange === 'mtd' ? 'Month to date' :
+                         dateRange === 'this' ? 'This month' :
+                         dateRange === 'prev' ? 'Previous month' :
+                         'Month to date'}
                       </MenuToggle>
                     )}
                   >
                     <SelectList>
-                      <SelectGroup label="Calendar">
-                        <SelectOption value="calendar-mtd" description="Oct 1 - 24">
-                          Calendar month to date
-                        </SelectOption>
-                        <SelectOption value="calendar-this" description="Oct 1 - 31">
-                          This month
-                        </SelectOption>
-                        <SelectOption value="calendar-prev" description="Sept 1 - 30">
-                          Previous month
-                        </SelectOption>
-                      </SelectGroup>
-                      <Divider />
-                      <SelectGroup label="Billing">
-                        <SelectOption value="billing-mtd" description="Sept 28 - Oct 24 (includes 3-day buffer)">
-                          Billing month to date
-                        </SelectOption>
-                        <SelectOption value="billing-this" description="Sept 28 - Oct 31 (includes 3-day buffer)">
-                          This billing month
-                        </SelectOption>
-                        <SelectOption value="billing-prev" description="Aug 28 - Sept 30 (includes 3-day buffer)">
-                          Previous billing month
-                        </SelectOption>
-                      </SelectGroup>
+                      <SelectOption value="mtd">Month to date</SelectOption>
+                      <SelectOption value="this">This month</SelectOption>
+                      <SelectOption value="prev">Previous month</SelectOption>
                     </SelectList>
                   </Select>
-                  <Popover
-                    aria-label="Date range info"
-                    headerContent={<div>Calendar vs Billing</div>}
-                    bodyContent={
-                      <div>
-                        <p><strong>Calendar:</strong> Standard monthly periods (1st to last day of month)</p>
-                        <p><strong>Billing:</strong> Includes 3-day buffer zones before/after month boundaries to match your cloud provider's billing cycle</p>
-                        <p style={{ marginTop: '8px' }}>Use "Billing" to exactly match your Azure invoice, especially for cross-over charges.</p>
-                      </div>
-                    }
-                  >
-                    <Button variant="plain" aria-label="More info">
-                      <OutlinedQuestionCircleIcon />
-                    </Button>
-                  </Popover>
                 </Flex>
               </Flex>
             </FlexItem>
