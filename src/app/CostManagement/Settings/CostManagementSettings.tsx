@@ -1921,16 +1921,16 @@ const CostManagementSettings: React.FunctionComponent = () => {
             </WizardStep>
           )}
 
-          {/* Step 3: ROSA hybrid commitment - only for AWS */}
+          {/* Step 3: Private offers - only for AWS */}
           {wizardIntegration === 'Amazon Web Services' && (
             <WizardStep
-              name="ROSA hybrid commitment"
-              id="rosa-commitment-step"
+              name="Private offers"
+              id="private-offers-step"
             >
               <Stack hasGutter>
                 <StackItem>
                   <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
-                    ROSA hybrid commitment (optional)
+                    Private offers (optional)
                   </Title>
                   <a
                     href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-setting-up-cost-models"
@@ -1943,40 +1943,42 @@ const CostManagementSettings: React.FunctionComponent = () => {
                 </StackItem>
 
                 <StackItem>
-                  <p style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
-                    If you have a Red Hat OpenShift Service on AWS (ROSA) private offer or hybrid commitment, enter your committed vCPU hours per month. This commitment applies across all clusters associated with this AWS account.
+                  <p style={{ marginTop: '0.5rem', marginBottom: '1.5rem' }}>
+                    If you have private offers or hybrid commitments, enter your committed resources. This commitment applies across all clusters associated with this AWS account.
                   </p>
+
+                  <Title headingLevel="h3" size="lg" style={{ marginBottom: '1rem' }}>
+                    Red Hat OpenShift on AWS
+                  </Title>
 
                   <Form>
                     <FormGroup
-                      label="Committed vCPU hours per month"
+                      label="Commitment"
                       fieldId="rosa-commitment"
                     >
-                      <TextInput
-                        id="rosa-commitment"
-                        type="number"
-                        aria-label="ROSA commitment in vCPU hours"
-                        placeholder="e.g., 1000"
-                        style={{ maxWidth: '300px' }}
-                      />
+                      <InputGroup style={{ maxWidth: '300px' }}>
+                        <InputGroupItem>
+                          <TextInput
+                            id="rosa-commitment"
+                            type="number"
+                            aria-label="ROSA commitment in vCPUs per month"
+                            placeholder="0"
+                            style={{ width: '120px' }}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <span style={{ 
+                            padding: '0 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: 'var(--pf-t--global--text--color--regular)'
+                          }}>
+                            vCPUs/month
+                          </span>
+                        </InputGroupItem>
+                      </InputGroup>
                       <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
-                        Enter the total vCPU hours you've committed to across all clusters. In the future, this may be auto-discovered from your AWS bill.
-                      </div>
-                    </FormGroup>
-
-                    <FormGroup
-                      label="Discount rate"
-                      fieldId="rosa-discount"
-                    >
-                      <TextInput
-                        id="rosa-discount"
-                        type="number"
-                        aria-label="Discount rate percentage"
-                        placeholder="e.g., 15"
-                        style={{ maxWidth: '300px' }}
-                      />
-                      <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
-                        Enter the discount percentage you receive for your prepaid commitment (optional).
+                        Enter the total vCPUs you've committed to per month across all clusters. In the future, this may be auto-discovered from your AWS bill.
                       </div>
                     </FormGroup>
                   </Form>
