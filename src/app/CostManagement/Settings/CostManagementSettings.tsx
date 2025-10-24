@@ -249,7 +249,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const getCommitmentStatus = (startDate: string): {
     status: 'active' | 'not-started';
     label: string;
-    variant: 'success' | 'info';
+    variant: 'green' | 'blue';
     daysInfo: string;
   } => {
     const today = new Date();
@@ -260,7 +260,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
       return {
         status: 'not-started',
         label: 'Not started',
-        variant: 'info',
+        variant: 'blue',
         daysInfo: `Starts in ${daysUntilStart} day${daysUntilStart !== 1 ? 's' : ''}`
       };
     } else {
@@ -268,7 +268,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
       return {
         status: 'active',
         label: 'Active',
-        variant: 'success',
+        variant: 'green',
         daysInfo: `Active for ${daysSinceStart} day${daysSinceStart !== 1 ? 's' : ''}`
       };
     }
