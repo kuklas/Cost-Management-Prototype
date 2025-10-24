@@ -2219,7 +2219,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                       <StackItem>
                         <Toolbar id="price-list-toolbar" style={{ gap: '1rem' }}>
                           <ToolbarContent>
-                            <ToolbarGroup variant="toggle-group" toggleIcon={<FilterIcon />}>
+                            <ToolbarGroup>
                               <ToolbarItem>
                                 <Select
                                   toggle={(toggleRef: React.Ref<any>) => (
@@ -2235,7 +2235,9 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                   )}
                                   isOpen={false}
                                 >
-                                  <SelectList></SelectList>
+                                  <SelectList>
+                                    <SelectOption value="">Select metric</SelectOption>
+                                  </SelectList>
                                 </Select>
                               </ToolbarItem>
                               <ToolbarItem></ToolbarItem>
@@ -2253,7 +2255,9 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                   )}
                                   isOpen={false}
                                 >
-                                  <SelectList></SelectList>
+                                  <SelectList>
+                                    <SelectOption value="">Select filter</SelectOption>
+                                  </SelectList>
                                 </Select>
                               </ToolbarItem>
                             </ToolbarGroup>
@@ -2863,7 +2867,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                   <StackItem>
                     <Toolbar id="assign-sources-toolbar">
                       <ToolbarContent>
-                        <ToolbarGroup variant="toggle-group" toggleIcon={<FilterIcon />}>
+                        <ToolbarGroup>
                           <ToolbarItem>
                             <InputGroup id="assign-source-search-input">
                               <InputGroupItem isFill>
@@ -2909,10 +2913,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {ocpIntegrations.slice(0, 10).map((integration) => (
+                        {ocpIntegrations.slice(0, 10).map((integration, idx) => (
                           <Tr key={integration.id}>
                             <Td
                               select={{
+                                rowIndex: idx,
                                 onSelect: (_event, isSelecting) => {
                                   setWizardSelectedIntegrations(
                                     isSelecting
