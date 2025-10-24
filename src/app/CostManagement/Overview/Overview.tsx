@@ -40,6 +40,37 @@ const Overview: React.FunctionComponent = () => {
   const [infraComparison, setInfraComparison] = React.useState('cumulative');
   const [showCostAsOpen, setShowCostAsOpen] = React.useState(false);
   const [showCostAs, setShowCostAs] = React.useState('Amortized');
+  const [periodTypeOpen, setPeriodTypeOpen] = React.useState(false);
+  const [periodType, setPeriodType] = React.useState<'calendar' | 'billing'>('calendar');
+  
+  // Get buffer configuration from localStorage
+  const getBufferDays = (provider: 'aws' | 'gcp' | 'azure' = 'aws'): { before: number; after: number } => {
+    try {
+      const savedConfig = localStorage.getItem('bufferConfiguration');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        
+        if (config.bufferMode === 'default') {
+          return { before: 3, after: 3 };
+        } else if (config.bufferMode === 'custom') {
+          if (config.customMode === 'all') {
+            return {
+              before: parseInt(config.allProvidersBefore || '3', 10),
+              after: parseInt(config.allProvidersAfter || '3', 10),
+            };
+          } else if (config.customMode === 'per-provider') {
+            return {
+              before: parseInt(config.providerBuffers?.[provider]?.before || '3', 10),
+              after: parseInt(config.providerBuffers?.[provider]?.after || '3', 10),
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load buffer configuration:', e);
+    }
+    return { before: 3, after: 3 }; // Default fallback
+  };
 
   const handleTabClick = (
     event: React.MouseEvent<HTMLElement, MouseEvent>,
@@ -60,6 +91,39 @@ const Overview: React.FunctionComponent = () => {
     tabIndex: string | number
   ) => {
     setInfraTopTab(tabIndex);
+  };
+  
+  // Get date range text based on period type and buffer configuration
+  const getDateRangeText = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+    const monthName = now.toLocaleDateString('en-US', { month: 'short' });
+    const currentDay = now.getDate();
+    
+    if (periodType === 'calendar') {
+      // Standard calendar month
+      return `${monthName} 1–${currentDay}`;
+    } else {
+      // Billing with buffer - determine which cloud provider
+      let provider: 'aws' | 'gcp' | 'azure' = 'aws';
+      if (perspective.includes('Google Cloud')) {
+        provider = 'gcp';
+      } else if (perspective.includes('Microsoft Azure')) {
+        provider = 'azure';
+      }
+      
+      const bufferDays = getBufferDays(provider);
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevMonthYear = month === 0 ? year - 1 : year;
+      const prevMonthName = new Date(prevMonthYear, prevMonth).toLocaleDateString('en-US', { month: 'short' });
+      const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
+      
+      // Calculate start date based on buffer (days before month end)
+      const bufferStart = lastDayOfPrevMonth - (bufferDays.before - 1);
+      
+      return `${prevMonthName} ${bufferStart}–${monthName} ${currentDay}`;
+    }
   };
 
   return (
@@ -177,6 +241,45 @@ const Overview: React.FunctionComponent = () => {
                     </SelectList>
                   </Select>
                   
+                  {/* Period Type Selector */}
+                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                    Period type
+                  </Title>
+                  <Select
+                    isOpen={periodTypeOpen}
+                    onSelect={(_event, value) => {
+                      setPeriodType(value as 'calendar' | 'billing');
+                      setPeriodTypeOpen(false);
+                    }}
+                    onOpenChange={(isOpen) => setPeriodTypeOpen(isOpen)}
+                    selected={periodType}
+                    toggle={(toggleRef) => (
+                      <MenuToggle 
+                        ref={toggleRef} 
+                        onClick={() => setPeriodTypeOpen(!periodTypeOpen)} 
+                        isExpanded={periodTypeOpen}
+                      >
+                        {periodType === 'calendar' ? 'Calendar' : 'Billing'}
+                      </MenuToggle>
+                    )}
+                  >
+                    <SelectList>
+                      <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month). Shows when services were used.">
+                        Calendar
+                      </SelectOption>
+                      <SelectOption 
+                        value="billing" 
+                        description={
+                          <>
+                            Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to="/cost-management/settings">Customize in Settings</Link>.
+                          </>
+                        }
+                      >
+                        Billing
+                      </SelectOption>
+                    </SelectList>
+                  </Select>
+                  
                   {/* Show cost as dropdown - only for Amazon Web Services */}
                   {perspective === 'Amazon Web Services' && (
                     <>
@@ -228,7 +331,7 @@ const Overview: React.FunctionComponent = () => {
               )}
             </FlexItem>
             <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
-              October 1 – 23
+              {activeTabKey === 1 ? getDateRangeText() : 'October 1 – 23'}
             </FlexItem>
           </Flex>
         </Flex>

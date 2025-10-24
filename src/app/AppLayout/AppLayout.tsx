@@ -62,15 +62,28 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
 
   const location = useLocation();
 
-  const renderNavItem = (route: IAppRoute, index: number) => (
-    <NavItem key={`${route.label}-${index}`} id={`${route.label}-${index}`} isActive={route.path === location.pathname}>
-      <NavLink
-        to={route.path}
-      >
-        {route.label}
-      </NavLink>
-    </NavItem>
-  );
+  const renderNavItem = (route: IAppRoute, index: number) => {
+    // Make OpenShift not clickable
+    if (route.label === 'OpenShift' && route.path === '/') {
+      return (
+        <NavItem key={`${route.label}-${index}`} id={`${route.label}-${index}`} isActive={false}>
+          <span style={{ cursor: 'default', color: 'var(--pf-t--global--text--color--regular)' }}>
+            {route.label}
+          </span>
+        </NavItem>
+      );
+    }
+    
+    return (
+      <NavItem key={`${route.label}-${index}`} id={`${route.label}-${index}`} isActive={route.path === location.pathname}>
+        <NavLink
+          to={route.path}
+        >
+          {route.label}
+        </NavLink>
+      </NavItem>
+    );
+  };
 
   const renderNavGroup = (group: IAppRouteGroup, groupIndex: number) => (
     <NavExpandable
@@ -78,6 +91,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
       id={`${group.label}-${groupIndex}`}
       title={group.label}
       isActive={group.routes.some((route) => route.path === location.pathname)}
+      isExpanded={group.label === 'Cost Management' ? true : undefined}
     >
       {group.routes.map((route, idx) => route.label && renderNavItem(route, idx))}
     </NavExpandable>

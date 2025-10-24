@@ -30,6 +30,7 @@ import {
   FilterIcon,
   ExportIcon,
 } from '@patternfly/react-icons';
+import { Link } from 'react-router-dom';
 
 interface ProjectData {
   id: string;
@@ -40,6 +41,8 @@ interface ProjectData {
 
 const CostExplorer: React.FunctionComponent = () => {
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
+  const [billingPerspectiveOpen, setBillingPerspectiveOpen] = React.useState(false);
+  const [billingPerspective, setBillingPerspective] = React.useState<'calendar' | 'billing'>('calendar');
   const [perspectiveOpen, setPerspectiveOpen] = React.useState(false);
   const [groupByOpen, setGroupByOpen] = React.useState(false);
   const [overheadOpen, setOverheadOpen] = React.useState(false);
@@ -53,8 +56,97 @@ const CostExplorer: React.FunctionComponent = () => {
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
   const [selectAll, setSelectAll] = React.useState(false);
 
-  // Generate date columns (Oct 1-23)
-  const dateColumns = Array.from({ length: 23 }, (_, i) => `Oct ${i + 1}`);
+  // Get buffer configuration from localStorage
+  const getBufferDays = (): { before: number; after: number } => {
+    try {
+      const savedConfig = localStorage.getItem('bufferConfiguration');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        
+        if (config.bufferMode === 'default') {
+          return { before: 3, after: 3 };
+        } else if (config.bufferMode === 'custom') {
+          if (config.customMode === 'all') {
+            return {
+              before: parseInt(config.allProvidersBefore || '3', 10),
+              after: parseInt(config.allProvidersAfter || '3', 10),
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load buffer configuration:', e);
+    }
+    return { before: 3, after: 3 }; // Default fallback
+  };
+  
+  const bufferDays = getBufferDays();
+  
+  // Generate date columns based on perspective and buffer
+  const generateDateColumns = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+    const monthName = now.toLocaleDateString('en-US', { month: 'short' });
+    const currentDay = now.getDate();
+    const columns: string[] = [];
+    
+    if (billingPerspective === 'calendar') {
+      // Standard calendar month: Oct 1 - Oct 24
+      for (let i = 1; i <= currentDay; i++) {
+        columns.push(`${monthName} ${i}`);
+      }
+    } else {
+      // Billing mode: includes buffer days from previous month
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevMonthYear = month === 0 ? year - 1 : year;
+      const prevMonthDate = new Date(prevMonthYear, prevMonth);
+      const prevMonthName = prevMonthDate.toLocaleDateString('en-US', { month: 'short' });
+      const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
+      
+      // Add days from previous month (buffer before)
+      const startDay = lastDayOfPrevMonth - (bufferDays.before - 1);
+      for (let i = startDay; i <= lastDayOfPrevMonth; i++) {
+        columns.push(`${prevMonthName} ${i}`);
+      }
+      
+      // Add days from current month
+      for (let i = 1; i <= currentDay; i++) {
+        columns.push(`${monthName} ${i}`);
+      }
+    }
+    
+    return columns;
+  };
+  
+  const dateColumns = generateDateColumns();
+  
+  // Get date range text based on perspective
+  const getDateRangeText = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+    const monthName = now.toLocaleDateString('en-US', { month: 'short' });
+    const currentDay = now.getDate();
+    
+    if (billingPerspective === 'calendar') {
+      // Standard calendar month
+      return `${monthName} 1–${currentDay}`;
+    } else {
+      // Billing with buffer
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevMonthYear = month === 0 ? year - 1 : year;
+      const prevMonthName = new Date(prevMonthYear, prevMonth).toLocaleDateString('en-US', { month: 'short' });
+      const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
+      
+      // Calculate start date based on buffer (days before month end)
+      const bufferStart = lastDayOfPrevMonth - (bufferDays.before - 1);
+      
+      return `${prevMonthName} ${bufferStart}–${monthName} ${currentDay}`;
+    }
+  };
+  
+  const dateRangeText = getDateRangeText();
 
   // Mock project data
   const projects: ProjectData[] = [
@@ -362,6 +454,47 @@ const CostExplorer: React.FunctionComponent = () => {
 
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                {/* Period Type */}
+                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                    Period type
+                  </Title>
+                  <Select
+                    isOpen={billingPerspectiveOpen}
+                    onSelect={(_event, value) => {
+                      setBillingPerspective(value as 'calendar' | 'billing');
+                      setBillingPerspectiveOpen(false);
+                    }}
+                    onOpenChange={(isOpen) => setBillingPerspectiveOpen(isOpen)}
+                    selected={billingPerspective}
+                    toggle={(toggleRef) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        onClick={() => setBillingPerspectiveOpen(!billingPerspectiveOpen)}
+                        isExpanded={billingPerspectiveOpen}
+                      >
+                        {billingPerspective === 'calendar' ? 'Calendar' : 'Billing'}
+                      </MenuToggle>
+                    )}
+                  >
+                    <SelectList>
+                      <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month). Shows when services were used.">
+                        Calendar
+                      </SelectOption>
+                      <SelectOption 
+                        value="billing" 
+                        description={
+                          <>
+                            Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to="/cost-management/settings">Customize in Settings</Link>.
+                          </>
+                        }
+                      >
+                        Billing
+                      </SelectOption>
+                    </SelectList>
+                  </Select>
+                </Flex>
+
                 {/* Perspective */}
                 <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
                   <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
@@ -449,7 +582,7 @@ const CostExplorer: React.FunctionComponent = () => {
               </Title>
             </FlexItem>
             <FlexItem style={{ textAlign: 'end' }}>
-              October 1 – 23
+              {dateRangeText}
             </FlexItem>
           </Flex>
         </Flex>

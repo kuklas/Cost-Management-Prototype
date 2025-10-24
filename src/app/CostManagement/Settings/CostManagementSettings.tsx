@@ -49,6 +49,7 @@ import {
   Radio,
   List,
   ListItem,
+  Popover,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import {
@@ -58,6 +59,7 @@ import {
   MinusCircleIcon,
   EllipsisVIcon,
   TimesIcon,
+  OutlinedQuestionCircleIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import { dataService } from '@app/data/dataService';
@@ -104,6 +106,54 @@ const CostManagementSettings: React.FunctionComponent = () => {
   // Currency tab state
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
   const [showCostAsOpen, setShowCostAsOpen] = React.useState(false);
+  const [perspectiveOpen, setPerspectiveOpen] = React.useState(false);
+  const [perspective, setPerspective] = React.useState<'calendar' | 'billing'>('calendar');
+  const [bufferMode, setBufferMode] = React.useState<'default' | 'custom'>('default');
+  const [customMode, setCustomMode] = React.useState<'all' | 'per-provider'>('all');
+  const [allProvidersBefore, setAllProvidersBefore] = React.useState('3');
+  const [allProvidersAfter, setAllProvidersAfter] = React.useState('3');
+  const [providerBuffers, setProviderBuffers] = React.useState<{
+    aws: { before: string; after: string };
+    gcp: { before: string; after: string };
+    azure: { before: string; after: string };
+  }>({
+    aws: { before: '3', after: '3' },
+    gcp: { before: '3', after: '3' },
+    azure: { before: '3', after: '3' },
+  });
+
+  // Load buffer configuration from localStorage on mount
+  React.useEffect(() => {
+    const savedConfig = localStorage.getItem('bufferConfiguration');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setBufferMode(config.bufferMode || 'default');
+        setCustomMode(config.customMode || 'all');
+        setAllProvidersBefore(config.allProvidersBefore || '3');
+        setAllProvidersAfter(config.allProvidersAfter || '3');
+        setProviderBuffers(config.providerBuffers || {
+          aws: { before: '3', after: '3' },
+          gcp: { before: '3', after: '3' },
+          azure: { before: '3', after: '3' },
+        });
+      } catch (e) {
+        console.error('Failed to load buffer configuration:', e);
+      }
+    }
+  }, []);
+
+  // Save buffer configuration to localStorage whenever it changes
+  React.useEffect(() => {
+    const config = {
+      bufferMode,
+      customMode,
+      allProvidersBefore,
+      allProvidersAfter,
+      providerBuffers,
+    };
+    localStorage.setItem('bufferConfiguration', JSON.stringify(config));
+  }, [bufferMode, customMode, allProvidersBefore, allProvidersAfter, providerBuffers]);
 
   // Tags tab state
   const [tagsSubTab, setTagsSubTab] = React.useState<string | number>(0);
@@ -599,6 +649,390 @@ const CostManagementSettings: React.FunctionComponent = () => {
                       </SelectList>
                     </Select>
                   </Flex>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 'var(--pf-t--global--spacer--lg)' }}>
+                <Title headingLevel="h2" size="md" style={{ paddingBottom: 'var(--pf-t--global--spacer--sm)' }}>
+                  Period type configuration
+                </Title>
+                <p>
+                  Configure how cross-over costs are calculated between calendar months and billing periods for cloud providers (AWS, Google Cloud, Azure).
+                </p>
+
+                <div style={{ marginTop: 'var(--pf-t--global--spacer--lg)', width: 'fit-content' }}>
+                  <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                    {/* Default Period Type Selector */}
+                    <FlexItem>
+                      <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                        <FlexItem style={{ minWidth: '150px' }}>
+                          <strong>Default period type</strong>
+                        </FlexItem>
+                        <FlexItem>
+                          <Select
+                            isOpen={perspectiveOpen}
+                            onSelect={(_event, value) => {
+                              setPerspective(value as 'calendar' | 'billing');
+                              setPerspectiveOpen(false);
+                            }}
+                            onOpenChange={(isOpen) => setPerspectiveOpen(isOpen)}
+                            selected={perspective}
+                            toggle={(toggleRef) => (
+                              <MenuToggle
+                                ref={toggleRef}
+                                onClick={() => setPerspectiveOpen(!perspectiveOpen)}
+                                isExpanded={perspectiveOpen}
+                                style={{ width: '250px' }}
+                              >
+                                {perspective === 'calendar' ? 'Calendar' : 'Billing'}
+                              </MenuToggle>
+                            )}
+                          >
+                            <SelectList>
+                              <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month)">
+                                Calendar
+                              </SelectOption>
+                              <SelectOption value="billing" description="Includes buffer zones to match cloud provider invoices">
+                                Billing
+                              </SelectOption>
+                            </SelectList>
+                          </Select>
+                        </FlexItem>
+                        <FlexItem>
+                          <Popover
+                            aria-label="Period type info"
+                            headerContent={<div>Calendar vs Billing period type</div>}
+                            bodyContent={
+                              <div>
+                                <p><strong>Calendar:</strong> Standard monthly periods (1st to last day of month). Shows costs when services were used.</p>
+                                <p style={{ marginTop: '8px' }}><strong>Billing:</strong> Includes buffer zones to account for cloud provider billing cycles where usage near month boundaries may appear on different invoices.</p>
+                              </div>
+                            }
+                          >
+                            <Button variant="plain" aria-label="More info">
+                              <OutlinedQuestionCircleIcon />
+                            </Button>
+                          </Popover>
+                        </FlexItem>
+                      </Flex>
+                    </FlexItem>
+
+                  </Flex>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 'var(--pf-t--global--spacer--lg)' }}>
+                <Title headingLevel="h2" size="md" style={{ paddingBottom: 'var(--pf-t--global--spacer--sm)' }}>
+                  Billing cross over period
+                </Title>
+                <div style={{ marginTop: 'var(--pf-t--global--spacer--lg)' }}>
+                  <FormGroup fieldId="buffer-mode">
+                    <Stack hasGutter>
+                      <StackItem>
+                        <Radio
+                          id="buffer-default"
+                          name="buffer-mode"
+                          label="Default"
+                          description="Use recommended 3-day buffer period for all cloud providers (3 days before month end, 3 days after month start)"
+                          isChecked={bufferMode === 'default'}
+                          onChange={() => setBufferMode('default')}
+                        />
+                      </StackItem>
+                      <StackItem>
+                        <Radio
+                          id="buffer-custom"
+                          name="buffer-mode"
+                          label="Custom"
+                          description="Configure custom buffer period per cloud provider"
+                          isChecked={bufferMode === 'custom'}
+                          onChange={() => setBufferMode('custom')}
+                        />
+                      </StackItem>
+                    </Stack>
+                  </FormGroup>
+
+                  {bufferMode === 'custom' && (
+                    <div style={{ marginTop: 'var(--pf-t--global--spacer--md)', marginLeft: 'var(--pf-t--global--spacer--lg)' }}>
+                      <Stack hasGutter>
+                        {/* Option 1: Apply same to all */}
+                        <StackItem>
+                          <Radio
+                            id="custom-all"
+                            name="custom-mode"
+                            label="Apply the same to all"
+                            description="Use the same custom buffer period for all cloud providers"
+                            isChecked={customMode === 'all'}
+                            onChange={() => setCustomMode('all')}
+                          />
+                          {customMode === 'all' && (
+                          <div style={{ marginLeft: 'var(--pf-t--global--spacer--lg)' }}>
+                            <Stack hasGutter>
+                              <StackItem>
+                                <FormGroup label="Days before month end" fieldId="all-buffer-before">
+                                  <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                                    <FlexItem>
+                                      <TextInput
+                                        type="number"
+                                        id="all-buffer-before"
+                                        value={allProvidersBefore}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setAllProvidersBefore(value);
+                                          } else if (value === '') {
+                                            setAllProvidersBefore('0');
+                                          }
+                                        }}
+                                        style={{ width: '100px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FlexItem>
+                                    <FlexItem>
+                                      <span style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                        (0-7 days)
+                                      </span>
+                                    </FlexItem>
+                                  </Flex>
+                                </FormGroup>
+                              </StackItem>
+
+                              <StackItem>
+                                <FormGroup label="Days after month start" fieldId="all-buffer-after">
+                                  <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                                    <FlexItem>
+                                      <TextInput
+                                        type="number"
+                                        id="all-buffer-after"
+                                        value={allProvidersAfter}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setAllProvidersAfter(value);
+                                          } else if (value === '') {
+                                            setAllProvidersAfter('0');
+                                          }
+                                        }}
+                                        style={{ width: '100px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FlexItem>
+                                    <FlexItem>
+                                      <span style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                                        (0-7 days)
+                                      </span>
+                                    </FlexItem>
+                                  </Flex>
+                                </FormGroup>
+                              </StackItem>
+                            </Stack>
+                          </div>
+                          )}
+                        </StackItem>
+
+                        {/* Option 2: Customize per provider */}
+                        <StackItem>
+                          <Radio
+                            id="custom-per-provider"
+                            name="custom-mode"
+                            label="Customize per cloud provider"
+                            description="Configure different buffer periods for each cloud provider"
+                            isChecked={customMode === 'per-provider'}
+                            onChange={() => setCustomMode('per-provider')}
+                          />
+                          {customMode === 'per-provider' && (
+                          <div style={{ marginLeft: 'var(--pf-t--global--spacer--lg)' }}>
+                            <Stack hasGutter>
+                              {/* Amazon Web Services */}
+                              <StackItem>
+                                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                                  <FlexItem style={{ minWidth: '200px' }}>
+                                    <strong>Amazon Web Services</strong>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days before" fieldId="aws-buffer-before" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="aws-buffer-before"
+                                        value={providerBuffers.aws.before}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              aws: { ...providerBuffers.aws, before: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              aws: { ...providerBuffers.aws, before: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days after" fieldId="aws-buffer-after" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="aws-buffer-after"
+                                        value={providerBuffers.aws.after}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              aws: { ...providerBuffers.aws, after: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              aws: { ...providerBuffers.aws, after: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                </Flex>
+                              </StackItem>
+
+                              {/* Google Cloud */}
+                              <StackItem>
+                                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                                  <FlexItem style={{ minWidth: '200px' }}>
+                                    <strong>Google Cloud</strong>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days before" fieldId="gcp-buffer-before" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="gcp-buffer-before"
+                                        value={providerBuffers.gcp.before}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              gcp: { ...providerBuffers.gcp, before: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              gcp: { ...providerBuffers.gcp, before: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days after" fieldId="gcp-buffer-after" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="gcp-buffer-after"
+                                        value={providerBuffers.gcp.after}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              gcp: { ...providerBuffers.gcp, after: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              gcp: { ...providerBuffers.gcp, after: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                </Flex>
+                              </StackItem>
+
+                              {/* Microsoft Azure */}
+                              <StackItem>
+                                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                                  <FlexItem style={{ minWidth: '200px' }}>
+                                    <strong>Microsoft Azure</strong>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days before" fieldId="azure-buffer-before" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="azure-buffer-before"
+                                        value={providerBuffers.azure.before}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              azure: { ...providerBuffers.azure, before: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              azure: { ...providerBuffers.azure, before: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                  <FlexItem>
+                                    <FormGroup label="Days after" fieldId="azure-buffer-after" style={{ marginBottom: 0 }}>
+                                      <TextInput
+                                        type="number"
+                                        id="azure-buffer-after"
+                                        value={providerBuffers.azure.after}
+                                        onChange={(_event, value) => {
+                                          const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 7) {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              azure: { ...providerBuffers.azure, after: value }
+                                            });
+                                          } else if (value === '') {
+                                            setProviderBuffers({
+                                              ...providerBuffers,
+                                              azure: { ...providerBuffers.azure, after: '0' }
+                                            });
+                                          }
+                                        }}
+                                        style={{ width: '80px' }}
+                                        min={0}
+                                        max={7}
+                                      />
+                                    </FormGroup>
+                                  </FlexItem>
+                                </Flex>
+                              </StackItem>
+                            </Stack>
+                          </div>
+                          )}
+                        </StackItem>
+                      </Stack>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardBody>
@@ -1229,17 +1663,29 @@ const CostManagementSettings: React.FunctionComponent = () => {
         variant={ModalVariant.large}
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
-        hasNoBodyWrapper
         aria-labelledby="create-cost-model-wizard-title"
       >
         <Wizard
-          title="Create a cost model"
-          description="A cost model allows you to associate a price to metrics provided by your integrations to charge for utilization of resources."
           onClose={() => setIsWizardOpen(false)}
+          header={
+            <div style={{ 
+              padding: '24px', 
+              backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
+              borderBottom: '1px solid var(--pf-t--global--border--color--default)'
+            }}>
+              <Title headingLevel="h1" size="2xl" style={{ marginBottom: '8px' }}>
+                Create a cost model
+              </Title>
+              <p style={{ color: 'var(--pf-t--global--text--color--subtle)', margin: 0 }}>
+                A cost model allows you to associate a price to metrics provided by your integrations to charge for utilization of resources.
+              </p>
+            </div>
+          }
         >
           <WizardStep
             name="Enter information"
             id="general-info-step"
+            footer={{ isNextDisabled: !wizardName.trim() || !wizardIntegration }}
           >
             <Stack hasGutter>
               <StackItem>
@@ -1256,7 +1702,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
               </StackItem>
               <StackItem>
                 <Form style={{ width: '350px' }}>
-                  <FormGroup label="Name" isRequired fieldId="name">
+                  <FormGroup 
+                    label="Name" 
+                    isRequired 
+                    fieldId="name"
+                  >
                     <TextInput
                       isRequired
                       type="text"
@@ -1283,7 +1733,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
                     />
                   </FormGroup>
 
-                  <FormGroup label="Integration" isRequired fieldId="source-type-selector">
+                  <FormGroup 
+                    label="Integration" 
+                    isRequired 
+                    fieldId="source-type-selector"
+                  >
                     <Select
                       isOpen={wizardIntegrationOpen}
                       onSelect={(_event, value) => {
@@ -1467,7 +1921,71 @@ const CostManagementSettings: React.FunctionComponent = () => {
             </WizardStep>
           )}
 
-          {/* Step 3: Assign integrations - only for AWS/Azure/GCP */}
+          {/* Step 3: ROSA hybrid commitment - only for AWS */}
+          {wizardIntegration === 'Amazon Web Services' && (
+            <WizardStep
+              name="ROSA hybrid commitment"
+              id="rosa-commitment-step"
+            >
+              <Stack hasGutter>
+                <StackItem>
+                  <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
+                    ROSA hybrid commitment (optional)
+                  </Title>
+                  <a
+                    href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-setting-up-cost-models"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 'var(--pf-t--global--font--size--sm)' }}
+                  >
+                    Learn more
+                  </a>
+                </StackItem>
+
+                <StackItem>
+                  <p style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                    If you have a Red Hat OpenShift Service on AWS (ROSA) private offer or hybrid commitment, enter your committed vCPU hours per month. This commitment applies across all clusters associated with this AWS account.
+                  </p>
+
+                  <Form>
+                    <FormGroup
+                      label="Committed vCPU hours per month"
+                      fieldId="rosa-commitment"
+                    >
+                      <TextInput
+                        id="rosa-commitment"
+                        type="number"
+                        aria-label="ROSA commitment in vCPU hours"
+                        placeholder="e.g., 1000"
+                        style={{ maxWidth: '300px' }}
+                      />
+                      <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                        Enter the total vCPU hours you've committed to across all clusters. In the future, this may be auto-discovered from your AWS bill.
+                      </div>
+                    </FormGroup>
+
+                    <FormGroup
+                      label="Discount rate"
+                      fieldId="rosa-discount"
+                    >
+                      <TextInput
+                        id="rosa-discount"
+                        type="number"
+                        aria-label="Discount rate percentage"
+                        placeholder="e.g., 15"
+                        style={{ maxWidth: '300px' }}
+                      />
+                      <div style={{ marginTop: '0.5rem', fontSize: 'var(--pf-t--global--font--size--sm)', color: 'var(--pf-t--global--text--color--subtle)' }}>
+                        Enter the discount percentage you receive for your prepaid commitment (optional).
+                      </div>
+                    </FormGroup>
+                  </Form>
+                </StackItem>
+              </Stack>
+            </WizardStep>
+          )}
+
+          {/* Step 4: Assign integrations - only for AWS */}
           {wizardIntegration === 'Amazon Web Services' && (
             <WizardStep
               name="Assign an integration to the cost model"
@@ -1568,7 +2086,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
             </WizardStep>
           )}
 
-          {/* Step 4: Review details - only for AWS/Azure/GCP */}
+          {/* Step 5: Review details - only for AWS */}
           {wizardIntegration === 'Amazon Web Services' && (
             <WizardStep
               name="Review details"

@@ -48,6 +48,7 @@ const ClusterDetail: React.FunctionComponent = () => {
   // Get cluster data from database
   const cluster = dataService.getClusterById(clusterId || '');
   const clusterProjects = dataService.getProjectsByClusterId(clusterId || '');
+  const clusterNodes = dataService.getNodesByClusterId(clusterId || '');
 
   // If cluster not found, show error
   if (!cluster) {
@@ -455,6 +456,27 @@ const ClusterDetail: React.FunctionComponent = () => {
               <span style={{ marginRight: '1rem' }}>Cost model:</span>
               <a href="/openshift/cost-management/settings/cost-model/66b2dc50-0769-498f-839c-ad81cbff725e">test-dla</a>
             </ListItem>
+          </List>
+
+          <h3>Nodes</h3>
+          <List isPlain>
+            <ListItem>
+              <span style={{ marginRight: '1rem' }}>Total nodes:</span>
+              <strong>{clusterNodes.length}</strong>
+            </ListItem>
+            {clusterNodes.length > 0 && (
+              <ListItem>
+                <div style={{ marginTop: '0.5rem' }}>
+                  <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                    {clusterNodes.map(node => (
+                      <li key={node.id} style={{ marginBottom: '0.25rem' }}>
+                        {node.name} <span style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>({node.nodeType}, {node.instanceType}, {node.architecture || 'x86_64'})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </ListItem>
+            )}
           </List>
         </Content>
       </Modal>

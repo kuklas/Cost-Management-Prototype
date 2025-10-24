@@ -769,7 +769,7 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                       }}
                     />
                     <Td dataLabel="Node names" modifier="nowrap">
-                      <Link to={`/openshift/cost-management/ocp/breakdown?breakdown_title=${node.name}&group_by[node]=${node.name}&id=${node.name}`}>
+                      <Link to={`/cost-management/openshift/node/${node.id}`}>
                         {node.name}
                       </Link>
                     </Td>

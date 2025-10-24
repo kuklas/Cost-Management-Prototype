@@ -22,6 +22,10 @@ import {
   Flex,
   FlexItem,
   Checkbox,
+  Label,
+  Popover,
+  Divider,
+  SelectGroup,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import { 
@@ -32,6 +36,8 @@ import {
   PauseIcon,
   SortAmountDownIcon,
   SortAmountUpIcon,
+  OutlinedQuestionCircleIcon,
+  ExclamationTriangleIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import { dataService } from '@app/data/dataService';
@@ -44,6 +50,15 @@ interface AccountItem {
   momPrevCost: string;
   cost: string;
   costPercent: string;
+  hasCrossOver: boolean;
+  crossOverAmount: number;
+  crossOverDirection: 'to-next-month' | 'from-prev-month';
+  crossOverNote?: string;
+  crossOverPeriod?: {
+    usageDates: string[];
+    invoiceMonth: string;
+    daysInThreshold: number;
+  };
 }
 
 const AWS: React.FunctionComponent = () => {
@@ -51,8 +66,11 @@ const AWS: React.FunctionComponent = () => {
   const [groupByOpen, setGroupByOpen] = React.useState(false);
   const [showCostAsOpen, setShowCostAsOpen] = React.useState(false);
   const [dateRangeOpen, setDateRangeOpen] = React.useState(false);
+  const [dateRange, setDateRange] = React.useState('mtd');
   const [categoryOpen, setCategoryOpen] = React.useState(false);
   const [operatorOpen, setOperatorOpen] = React.useState(false);
+  const [perspectiveOpen, setPerspectiveOpen] = React.useState(false);
+  const [perspective, setPerspective] = React.useState<'calendar' | 'billing'>('calendar');
   const [searchValue, setSearchValue] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(10);
@@ -63,24 +81,120 @@ const AWS: React.FunctionComponent = () => {
   // Get data from database
   const dbAccounts = dataService.getAWSAccounts();
   const totalAWSCost = dataService.getAWSTotalCost();
+  
+  // Get buffer configuration for AWS from localStorage
+  const getBufferDays = (): { before: number; after: number } => {
+    try {
+      const savedConfig = localStorage.getItem('bufferConfiguration');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        
+        if (config.bufferMode === 'default') {
+          return { before: 3, after: 3 };
+        } else if (config.bufferMode === 'custom') {
+          if (config.customMode === 'all') {
+            return {
+              before: parseInt(config.allProvidersBefore || '3', 10),
+              after: parseInt(config.allProvidersAfter || '3', 10),
+            };
+          } else if (config.customMode === 'per-provider') {
+            return {
+              before: parseInt(config.providerBuffers?.aws?.before || '3', 10),
+              after: parseInt(config.providerBuffers?.aws?.after || '3', 10),
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load buffer configuration:', e);
+    }
+    return { before: 3, after: 3 }; // Default fallback
+  };
+  
+  const bufferDays = getBufferDays();
+  
+  // Calculate total cost based on perspective
+  const getTotalCost = () => {
+    if (perspective === 'calendar') {
+      // Calendar: sum of usage date costs
+      return dbAccounts.reduce((sum, account) => sum + account.usageDateCost, 0);
+    } else {
+      // Billing: sum of invoice month costs (includes cross-over)
+      return dbAccounts.reduce((sum, account) => sum + account.invoiceMonthCost, 0);
+    }
+  };
+  
+  // Get date range text based on perspective and buffer configuration
+  const getDateRangeText = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+    const monthName = now.toLocaleDateString('en-US', { month: 'short' });
+    const currentDay = now.getDate();
+    
+    if (perspective === 'calendar') {
+      // Standard calendar month
+      return `${monthName} 1–${currentDay}, ${year}`;
+    } else {
+      // Billing with custom buffer
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevMonthYear = month === 0 ? year - 1 : year;
+      const prevMonthName = new Date(prevMonthYear, prevMonth).toLocaleDateString('en-US', { month: 'short' });
+      const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
+      
+      // Calculate start date based on buffer (days before month end)
+      const bufferStart = lastDayOfPrevMonth - (bufferDays.before - 1);
+      
+      return `${prevMonthName} ${bufferStart}–${monthName} ${currentDay}, ${year}`;
+    }
+  };
+  
+  const displayTotal = getTotalCost();
+  const dateRangeText = getDateRangeText();
 
-  // Transform accounts data for the UI
+  // Transform accounts data for the UI based on selected perspective
   const accounts: AccountItem[] = dbAccounts.map(account => {
-    const percentage = (account.cost / totalAWSCost) * 100;
-    const prevCost = account.cost / (1 + (account.monthOverMonthChange / 100));
+    // Calendar = usage date costs (when services were used)
+    // Billing = invoice month costs (includes 3-day buffer, matches invoice)
+    const displayCost = perspective === 'calendar' ? account.usageDateCost : account.invoiceMonthCost;
+    const percentage = (displayCost / totalAWSCost) * 100;
+    
+    // Calculate MoM based on perspective
+    // For calendar: compare actual usage periods (excluding 3-day threshold)
+    // For billing: compare full invoice amounts (includes cross-over)
+    let momChange = account.monthOverMonthChange;
+    let prevCost = displayCost / (1 + (momChange / 100));
+    
+    // Adjust MoM calculation for calendar perspective if there's cross-over
+    if (perspective === 'calendar' && account.hasCrossOver) {
+      // When comparing calendar dates, we need to account for the 3-day threshold shift
+      // Example: Oct usage (missing 29-31) vs Sept usage (missing 28-30)
+      const adjustedMomChange = ((account.usageDateCost - account.invoiceMonthCost) / account.invoiceMonthCost) * 100;
+      momChange = adjustedMomChange;
+      prevCost = account.usageDateCost / (1 + (adjustedMomChange / 100));
+    }
     
     return {
       id: account.accountNumber,
       name: account.displayName,
       alias: account.accountNumber,
-      momChange: account.monthOverMonthChange,
+      momChange: momChange,
       momPrevCost: dataService.formatCurrency(prevCost),
-      cost: dataService.formatCurrency(account.cost),
+      cost: dataService.formatCurrency(displayCost),
       costPercent: percentage.toFixed(2),
+      hasCrossOver: account.hasCrossOver,
+      crossOverAmount: account.crossOverAmount,
+      crossOverDirection: account.crossOverDirection,
+      crossOverNote: account.crossOverNote,
+      crossOverPeriod: account.crossOverPeriod,
     };
   });
 
   const totalItems = accounts.length;
+  
+  // Calculate total cross-over amount
+  const totalCrossOver = dbAccounts.reduce((sum, account) => sum + (account.hasCrossOver ? account.crossOverAmount : 0), 0);
+  const hasCrossOverData = dbAccounts.some(account => account.hasCrossOver);
 
   const getSortParams = (columnIndex: number): ThProps['sort'] => ({
     sortBy: {
@@ -169,7 +283,7 @@ const AWS: React.FunctionComponent = () => {
               </Button>
             </FlexItem>
             <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
-              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>$20,729.73</Title>
+              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>${displayTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Title>
             </FlexItem>
           </Flex>
 
@@ -230,30 +344,79 @@ const AWS: React.FunctionComponent = () => {
                   </Select>
                 </Flex>
 
+                {/* Period Type Selector */}
+                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                  <Title headingLevel="h3" size="md" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
+                    Period type
+                  </Title>
+                  <Select
+                    isOpen={perspectiveOpen}
+                    onSelect={(_event, value) => {
+                      setPerspective(value as 'calendar' | 'billing');
+                      setPerspectiveOpen(false);
+                    }}
+                    onOpenChange={(isOpen) => setPerspectiveOpen(isOpen)}
+                    selected={perspective}
+                    toggle={(toggleRef) => (
+                      <MenuToggle 
+                        ref={toggleRef} 
+                        onClick={() => setPerspectiveOpen(!perspectiveOpen)} 
+                        isExpanded={perspectiveOpen}
+                      >
+                        {perspective === 'calendar' ? 'Calendar' : 'Billing'}
+                      </MenuToggle>
+                    )}
+                  >
+                    <SelectList>
+                      <SelectOption value="calendar" description="Standard monthly periods (1st to last day of month). Shows when services were used.">
+                        Calendar
+                      </SelectOption>
+                      <SelectOption 
+                        value="billing" 
+                        description={
+                          <>
+                            Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to="/cost-management/settings">Customize in Settings</Link>.
+                          </>
+                        }
+                      >
+                        Billing
+                      </SelectOption>
+                    </SelectList>
+                  </Select>
+                </Flex>
+
                 {/* Date Range */}
                 <Select
                   isOpen={dateRangeOpen}
-                  onSelect={() => setDateRangeOpen(false)}
+                  onSelect={(_event, value) => {
+                    setDateRange(value as string);
+                    setDateRangeOpen(false);
+                  }}
                   onOpenChange={(isOpen) => setDateRangeOpen(isOpen)}
+                  selected={dateRange}
                   toggle={(toggleRef) => (
                     <MenuToggle 
                       ref={toggleRef} 
                       onClick={() => setDateRangeOpen(!dateRangeOpen)} 
                       isExpanded={dateRangeOpen}
                     >
-                      Month to date
+                      {dateRange === 'mtd' ? 'Month to date' :
+                       dateRange === 'this' ? 'This month' :
+                       dateRange === 'prev' ? 'Previous month' :
+                       'Month to date'}
                     </MenuToggle>
                   )}
                 >
                   <SelectList>
                     <SelectOption value="mtd">Month to date</SelectOption>
-                    <SelectOption value="ytd">Year to date</SelectOption>
+                    <SelectOption value="this">This month</SelectOption>
+                    <SelectOption value="prev">Previous month</SelectOption>
                   </SelectList>
                 </Select>
               </Flex>
             </FlexItem>
             <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
-              October 1 – 24
+              {dateRangeText}
             </FlexItem>
           </Flex>
         </Flex>
@@ -362,7 +525,7 @@ const AWS: React.FunctionComponent = () => {
                 <Tr>
                   <Th />
                   <Th sort={getSortParams(1)} modifier="nowrap">Account names</Th>
-                  <Th modifier="nowrap">Month over month change</Th>
+                  <Th modifier="nowrap">{perspective === 'calendar' ? 'Month over month change' : 'Period over period change'}</Th>
                   <Th 
                     sort={getSortParams(3)} 
                     modifier="nowrap"
@@ -384,28 +547,59 @@ const AWS: React.FunctionComponent = () => {
                       }}
                     />
                     <Td dataLabel="Account names" modifier="nowrap">
-                      <Link to={`/cost-management/aws/breakdown?breakdown_title=${account.name}&group_by[account]=${account.id}`}>
-                        {account.name}
-                      </Link>
-                      {account.alias && (
-                        <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
-                          {account.alias}
-                        </div>
-                      )}
+                      <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                        <FlexItem>
+                          <div>
+                            <Link to={`/cost-management/aws/breakdown?breakdown_title=${account.name}&group_by[account]=${account.id}`}>
+                              {account.name}
+                            </Link>
+                            {account.alias && (
+                              <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                                {account.alias}
+                              </div>
+                            )}
+                          </div>
+                        </FlexItem>
+                      </Flex>
                     </Td>
-                    <Td dataLabel="Month over month change" modifier="nowrap">
+                    <Td dataLabel={perspective === 'calendar' ? 'Month over month change' : 'Period over period change'} modifier="nowrap">
                       <div>
-                        <div style={{ color: account.momChange < 0 ? 'var(--pf-t--global--color--status--success--default)' : 'var(--pf-t--global--color--status--danger--default)' }}>
-                          {Math.abs(account.momChange)} %
-                          {account.momChange < 0 ? (
-                            <SortAmountDownIcon style={{ marginLeft: '4px', position: 'relative', bottom: '0.25rem' }} />
-                          ) : (
-                            <SortAmountUpIcon style={{ marginLeft: '4px', position: 'relative' }} />
-                          )}
-                        </div>
-                        <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
-                          {account.momPrevCost} for September 1 – 23
-                        </div>
+                        {perspective === 'calendar' ? (
+                          // Calendar mode: Show month over month change
+                          <>
+                            <div style={{ color: account.momChange < 0 ? 'var(--pf-t--global--color--status--success--default)' : 'var(--pf-t--global--color--status--danger--default)' }}>
+                              {Math.abs(account.momChange).toFixed(1)} %
+                              {account.momChange < 0 ? (
+                                <SortAmountDownIcon style={{ marginLeft: '4px', position: 'relative', bottom: '0.25rem' }} />
+                              ) : (
+                                <SortAmountUpIcon style={{ marginLeft: '4px', position: 'relative' }} />
+                              )}
+                            </div>
+                            <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                              {account.momPrevCost} for {account.hasCrossOver ? 'Sept 1 – 27 (calendar)' : 'September 1 – 23'}
+                            </div>
+                          </>
+                        ) : (
+                          // Billing mode: Show period over period change AND cross-over difference
+                          <>
+                            <div style={{ color: account.momChange < 0 ? 'var(--pf-t--global--color--status--success--default)' : 'var(--pf-t--global--color--status--danger--default)' }}>
+                              {Math.abs(account.momChange).toFixed(1)} %
+                              {account.momChange < 0 ? (
+                                <SortAmountDownIcon style={{ marginLeft: '4px', position: 'relative', bottom: '0.25rem' }} />
+                              ) : (
+                                <SortAmountUpIcon style={{ marginLeft: '4px', position: 'relative' }} />
+                              )}
+                            </div>
+                            <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>
+                              {account.momPrevCost} for previous billing period
+                            </div>
+                            {account.hasCrossOver && (
+                              <div style={{ color: 'var(--pf-t--global--icon--color--status--warning--default)', fontSize: '0.75rem', marginTop: '4px' }}>
+                                {account.crossOverDirection === 'to-next-month' ? '-' : '+'}{dataService.formatCurrency(account.crossOverAmount)} cross-over
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </Td>
                     <Td dataLabel="Cost" modifier="nowrap" style={{ textAlign: 'right' }}>

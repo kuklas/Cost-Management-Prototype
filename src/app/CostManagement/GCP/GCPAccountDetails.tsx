@@ -30,6 +30,8 @@ import { dataService } from '@app/data/dataService';
 const GCPAccountDetails: React.FunctionComponent = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
+  const [periodTypeOpen, setPeriodTypeOpen] = React.useState(false);
+  const [periodType, setPeriodType] = React.useState<'calendar' | 'billing'>('calendar');
   const [activeTabKey, setActiveTabKey] = React.useState<string | number>(0);
 
   const handleTabClick = (
@@ -53,11 +55,65 @@ const GCPAccountDetails: React.FunctionComponent = () => {
     );
   }
 
+  // Get buffer configuration from localStorage
+  const getBufferDays = () => {
+    const stored = localStorage.getItem('bufferConfiguration');
+    if (stored) {
+      const config = JSON.parse(stored);
+      if (config.bufferMode === 'custom') {
+        if (config.customMode === 'all') {
+          return { before: config.allProvidersBefore, after: config.allProvidersAfter };
+        } else {
+          return { before: config.providerBuffers.gcp.before, after: config.providerBuffers.gcp.after };
+        }
+      }
+    }
+    return { before: 3, after: 3 }; // Default
+  };
+
+  const bufferDays = getBufferDays();
+
+  // Calculate dynamic total cost based on period type
+  const getTotalCost = () => {
+    if (periodType === 'calendar') {
+      return account.usageDateCost;
+    } else {
+      return account.invoiceMonthCost;
+    }
+  };
+
+  // Calculate dynamic date range based on period type and buffer
+  const getDateRangeText = () => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const currentDay = today.getDate();
+    
+    if (periodType === 'calendar') {
+      return `October 1 – ${currentDay}`;
+    } else {
+      // Billing period includes buffer days
+      const lastMonth = new Date(currentYear, currentMonth, 0);
+      const daysInLastMonth = lastMonth.getDate();
+      const startDay = Math.max(1, 1 - bufferDays.before);
+      const endDay = currentDay + bufferDays.after;
+      
+      if (bufferDays.before > 0) {
+        return `September ${daysInLastMonth - bufferDays.before + 1} – October ${currentDay + bufferDays.after}`;
+      } else {
+        return `October 1 – ${endDay}`;
+      }
+    }
+  };
+
+  const displayTotal = getTotalCost();
+  const dateRangeText = getDateRangeText();
+
   const accountData = {
     name: account.displayName,
     id: account.billingAccountId,
-    totalCost: dataService.formatCurrency(account.cost),
-    dateRange: 'October 1 – 24',
+    totalCost: dataService.formatCurrency(displayTotal),
+    dateRange: dateRangeText,
     tagCount: 18, // Placeholder
   };
 
@@ -131,8 +187,45 @@ const GCPAccountDetails: React.FunctionComponent = () => {
           {/* Account Name and Total Cost Row */}
           <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset', paddingBottom: 'var(--pf-t--global--spacer--sm)', paddingLeft: '1px', paddingTop: 'var(--pf-t--global--spacer--xs)' }}>
             <FlexItem>
-              <Flex direction={{ default: 'column' }}>
+              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <Title headingLevel="h1" size="2xl">{accountData.name}</Title>
+                {/* Period type dropdown */}
+                <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                  <FlexItem>
+                    <span style={{ fontSize: 'var(--pf-t--global--font--size--body--default)', fontWeight: 'var(--pf-t--global--font--weight--body--default)' }}>
+                      Period type
+                    </span>
+                  </FlexItem>
+                  <FlexItem>
+                    <Select
+                      isOpen={periodTypeOpen}
+                      onSelect={(_event, value) => {
+                        setPeriodType(value as 'calendar' | 'billing');
+                        setPeriodTypeOpen(false);
+                      }}
+                      onOpenChange={(isOpen) => setPeriodTypeOpen(isOpen)}
+                      toggle={(toggleRef) => (
+                        <MenuToggle
+                          ref={toggleRef}
+                          onClick={() => setPeriodTypeOpen(!periodTypeOpen)}
+                          isExpanded={periodTypeOpen}
+                          style={{ minWidth: '200px' }}
+                        >
+                          {periodType === 'calendar' ? 'Calendar' : 'Billing'}
+                        </MenuToggle>
+                      )}
+                    >
+                      <SelectList>
+                        <SelectOption value="calendar" description="Shows costs for usage that occurred within the calendar month (1st to last day).">
+                          Calendar
+                        </SelectOption>
+                        <SelectOption value="billing" description="Includes buffer zones (default: 3 days before/after month boundaries) to match your invoice. <Link to='/cost-management/settings'>Customize in Settings</Link>.">
+                          Billing
+                        </SelectOption>
+                      </SelectList>
+                    </Select>
+                  </FlexItem>
+                </Flex>
               </Flex>
             </FlexItem>
             <FlexItem>
@@ -146,7 +239,7 @@ const GCPAccountDetails: React.FunctionComponent = () => {
           </Flex>
 
           {/* Tabs and Tags Row */}
-          <div style={{ display: 'flex' }}>
+          <Flex>
             <Tabs activeKey={activeTabKey} onSelect={handleTabClick}>
               <Tab eventKey={0} title={<TabTitleText>Cost overview</TabTitleText>} />
               <Tab eventKey={1} title={<TabTitleText>Historical data</TabTitleText>} />
@@ -157,7 +250,7 @@ const GCPAccountDetails: React.FunctionComponent = () => {
                 <Link to="#" style={{ marginLeft: '0.5rem' }}>18</Link>
               </div>
             </div>
-          </div>
+          </Flex>
         </Flex>
       </PageSection>
 
@@ -184,12 +277,19 @@ const GCPAccountDetails: React.FunctionComponent = () => {
                         height: '332px',
                         backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: 'var(--pf-t--global--border--radius--default)',
                         color: 'var(--pf-t--global--text--color--subtle)'
                       }}>
-                        Cost Breakdown Chart
+                        <div>Cost Breakdown Chart</div>
+                        <div style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', marginTop: '0.5rem' }}>
+                          Period: {periodType === 'calendar' ? 'Calendar' : 'Billing'} ({accountData.dateRange})
+                        </div>
+                        <div style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)' }}>
+                          Total: {accountData.totalCost}
+                        </div>
                       </div>
                     </CardBody>
                   </Card>
@@ -312,12 +412,16 @@ const GCPAccountDetails: React.FunctionComponent = () => {
                           height: '250px',
                           backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           borderRadius: 'var(--pf-t--global--border--radius--default)',
                           color: 'var(--pf-t--global--text--color--subtle)'
                         }}>
-                          Cost Comparison Chart (Historical)
+                          <div>Cost Comparison Chart (Historical)</div>
+                          <div style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', marginTop: '0.5rem' }}>
+                            Period: {periodType === 'calendar' ? 'Calendar' : 'Billing'} ({accountData.dateRange})
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -341,12 +445,16 @@ const GCPAccountDetails: React.FunctionComponent = () => {
                           height: '250px',
                           backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           borderRadius: 'var(--pf-t--global--border--radius--default)',
                           color: 'var(--pf-t--global--text--color--subtle)'
                         }}>
-                          Compute Usage Chart (Historical)
+                          <div>Compute Usage Chart (Historical)</div>
+                          <div style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', marginTop: '0.5rem' }}>
+                            Period: {periodType === 'calendar' ? 'Calendar' : 'Billing'} ({accountData.dateRange})
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -370,12 +478,16 @@ const GCPAccountDetails: React.FunctionComponent = () => {
                           height: '250px',
                           backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           borderRadius: 'var(--pf-t--global--border--radius--default)',
                           color: 'var(--pf-t--global--text--color--subtle)'
                         }}>
-                          Storage Usage Chart (Historical)
+                          <div>Storage Usage Chart (Historical)</div>
+                          <div style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', marginTop: '0.5rem' }}>
+                            Period: {periodType === 'calendar' ? 'Calendar' : 'Billing'} ({accountData.dateRange})
+                          </div>
                         </div>
                       </div>
                     </div>

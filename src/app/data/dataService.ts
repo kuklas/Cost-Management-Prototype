@@ -63,6 +63,17 @@ export interface AWSAccount {
   displayName: string;
   accountNumber: string;
   cost: number;
+  usageDateCost: number;
+  invoiceMonthCost: number;
+  crossOverAmount: number;
+  hasCrossOver: boolean;
+  crossOverDirection: 'to-next-month' | 'from-prev-month';
+  crossOverNote?: string;
+  crossOverPeriod?: {
+    usageDates: string[];
+    invoiceMonth: string;
+    daysInThreshold: number;
+  };
   monthOverMonthChange: number;
   costModelId: string;
   services: AWSService[];
@@ -86,6 +97,17 @@ export interface GCPAccount {
   displayName: string;
   billingAccountId: string;
   cost: number;
+  usageDateCost: number;
+  invoiceMonthCost: number;
+  crossOverAmount: number;
+  hasCrossOver: boolean;
+  crossOverDirection: 'to-next-month' | 'from-prev-month';
+  crossOverNote?: string;
+  crossOverPeriod?: {
+    usageDates: string[];
+    invoiceMonth: string;
+    daysInThreshold: number;
+  };
   monthOverMonthChange: number;
   costModelId: string;
   projects: GCPProject[];
@@ -116,6 +138,17 @@ export interface AzureAccount {
   displayName: string;
   subscriptionId: string;
   cost: number;
+  usageDateCost: number;
+  invoiceMonthCost: number;
+  crossOverAmount: number;
+  hasCrossOver: boolean;
+  crossOverDirection: 'to-next-month' | 'from-prev-month';
+  crossOverNote?: string;
+  crossOverPeriod?: {
+    usageDates: string[];
+    invoiceMonth: string;
+    daysInThreshold: number;
+  };
   monthOverMonthChange: number;
   costModelId: string;
   services: AzureService[];
@@ -205,6 +238,10 @@ class DataService {
 
   getClusterById(clusterId: string): Cluster | undefined {
     return this.data.openshift.clusters.find(c => c.id === clusterId);
+  }
+
+  getNodeById(nodeId: string): Node | undefined {
+    return this.data.openshift.nodes.find(n => n.id === nodeId);
   }
 
   getOpenShiftTotalCost(): number {
@@ -304,7 +341,7 @@ class DataService {
   }
 
   getGCPAccountById(accountId: string): GCPAccount | undefined {
-    return this.data.gcp.accounts.find(a => a.id === accountId);
+    return this.data.gcp.accounts.find(a => a.billingAccountId === accountId);
   }
 
   getGCPTotalCost(): number {

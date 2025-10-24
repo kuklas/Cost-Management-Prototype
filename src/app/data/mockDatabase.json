@@ -105,6 +105,7 @@
         "provider": "aws",
         "instanceType": "m5.4xlarge",
         "nodeType": "worker",
+        "architecture": "x86_64",
         "cost": 2800,
         "cpuCapacity": 16,
         "memoryCapacityGiB": 64,
@@ -120,7 +121,8 @@
         "cost": 2750,
         "cpuCapacity": 16,
         "memoryCapacityGiB": 64,
-        "monthOverMonthChange": -1.8
+        "monthOverMonthChange": -1.8,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-us-east-003",
@@ -132,7 +134,8 @@
         "cost": 1400,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": 0.5
+        "monthOverMonthChange": 0.5,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-us-east-004",
@@ -144,7 +147,8 @@
         "cost": 1380,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": -0.3
+        "monthOverMonthChange": -0.3,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-us-east-005",
@@ -153,6 +157,7 @@
         "provider": "aws",
         "instanceType": "m5.xlarge",
         "nodeType": "master",
+        "architecture": "ARM64",
         "cost": 700,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 16,
@@ -168,7 +173,8 @@
         "cost": 2100,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": 1.2
+        "monthOverMonthChange": 1.2,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-eu-west-002",
@@ -180,7 +186,8 @@
         "cost": 2050,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": 0.8
+        "monthOverMonthChange": 0.8,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-eu-west-003",
@@ -192,7 +199,8 @@
         "cost": 1050,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 16,
-        "monthOverMonthChange": -1.5
+        "monthOverMonthChange": -1.5,
+        "architecture": "x86_64"
       },
       {
         "id": "node-prod-eu-west-004",
@@ -204,7 +212,8 @@
         "cost": 700,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 16,
-        "monthOverMonthChange": 0.0
+        "monthOverMonthChange": 0.0,
+        "architecture": "x86_64"
       },
       {
         "id": "node-staging-us-central-001",
@@ -216,7 +225,8 @@
         "cost": 950,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 30,
-        "monthOverMonthChange": -3.2
+        "monthOverMonthChange": -3.2,
+        "architecture": "x86_64"
       },
       {
         "id": "node-staging-us-central-002",
@@ -228,7 +238,8 @@
         "cost": 920,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 30,
-        "monthOverMonthChange": -2.8
+        "monthOverMonthChange": -2.8,
+        "architecture": "x86_64"
       },
       {
         "id": "node-staging-us-central-003",
@@ -240,7 +251,8 @@
         "cost": 480,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 15,
-        "monthOverMonthChange": -2.1
+        "monthOverMonthChange": -2.1,
+        "architecture": "ARM64"
       },
       {
         "id": "node-staging-us-central-004",
@@ -252,7 +264,8 @@
         "cost": 480,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 15,
-        "monthOverMonthChange": 0.0
+        "monthOverMonthChange": 0.0,
+        "architecture": "x86_64"
       },
       {
         "id": "node-dev-us-west-001",
@@ -264,7 +277,8 @@
         "cost": 650,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": -10.2
+        "monthOverMonthChange": -10.2,
+        "architecture": "x86_64"
       },
       {
         "id": "node-dev-us-west-002",
@@ -276,7 +290,8 @@
         "cost": 620,
         "cpuCapacity": 8,
         "memoryCapacityGiB": 32,
-        "monthOverMonthChange": -9.8
+        "monthOverMonthChange": -9.8,
+        "architecture": "x86_64"
       },
       {
         "id": "node-dev-us-west-003",
@@ -288,7 +303,8 @@
         "cost": 310,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 16,
-        "monthOverMonthChange": -7.5
+        "monthOverMonthChange": -7.5,
+        "architecture": "s390x"
       },
       {
         "id": "node-dev-us-west-004",
@@ -300,7 +316,8 @@
         "cost": 310,
         "cpuCapacity": 4,
         "memoryCapacityGiB": 16,
-        "monthOverMonthChange": 0.0
+        "monthOverMonthChange": 0.0,
+        "architecture": "x86_64"
       }
     ],
     "projects": [
@@ -562,6 +579,21 @@
         "displayName": "AWS Production Account",
         "accountNumber": "123456789012",
         "cost": 115000,
+        "usageDateCost": 115000,
+        "invoiceMonthCost": 114650,
+        "crossOverAmount": 350,
+        "hasCrossOver": true,
+        "crossOverDirection": "to-next-month",
+        "crossOverNote": "Usage from Oct 29-31 appears on Nov invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-10-29",
+            "2024-10-30",
+            "2024-10-31"
+          ],
+          "invoiceMonth": "2024-11",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": 4.2,
         "costModelId": "aws-enterprise-discount",
         "services": [
@@ -570,9 +602,18 @@
             "code": "EC2",
             "cost": 45000,
             "regions": [
-              { "name": "us-east-1", "cost": 25000 },
-              { "name": "us-west-2", "cost": 12000 },
-              { "name": "eu-west-1", "cost": 8000 }
+              {
+                "name": "us-east-1",
+                "cost": 25000
+              },
+              {
+                "name": "us-west-2",
+                "cost": 12000
+              },
+              {
+                "name": "eu-west-1",
+                "cost": 8000
+              }
             ]
           },
           {
@@ -580,8 +621,14 @@
             "code": "RDS",
             "cost": 28000,
             "regions": [
-              { "name": "us-east-1", "cost": 18000 },
-              { "name": "eu-west-1", "cost": 10000 }
+              {
+                "name": "us-east-1",
+                "cost": 18000
+              },
+              {
+                "name": "eu-west-1",
+                "cost": 10000
+              }
             ]
           },
           {
@@ -589,9 +636,18 @@
             "code": "S3",
             "cost": 15000,
             "regions": [
-              { "name": "us-east-1", "cost": 8000 },
-              { "name": "us-west-2", "cost": 4000 },
-              { "name": "eu-west-1", "cost": 3000 }
+              {
+                "name": "us-east-1",
+                "cost": 8000
+              },
+              {
+                "name": "us-west-2",
+                "cost": 4000
+              },
+              {
+                "name": "eu-west-1",
+                "cost": 3000
+              }
             ]
           },
           {
@@ -599,8 +655,14 @@
             "code": "EKS",
             "cost": 12000,
             "regions": [
-              { "name": "us-east-1", "cost": 7000 },
-              { "name": "us-west-2", "cost": 5000 }
+              {
+                "name": "us-east-1",
+                "cost": 7000
+              },
+              {
+                "name": "us-west-2",
+                "cost": 5000
+              }
             ]
           },
           {
@@ -608,9 +670,18 @@
             "code": "Lambda",
             "cost": 6500,
             "regions": [
-              { "name": "us-east-1", "cost": 4000 },
-              { "name": "us-west-2", "cost": 1500 },
-              { "name": "eu-west-1", "cost": 1000 }
+              {
+                "name": "us-east-1",
+                "cost": 4000
+              },
+              {
+                "name": "us-west-2",
+                "cost": 1500
+              },
+              {
+                "name": "eu-west-1",
+                "cost": 1000
+              }
             ]
           },
           {
@@ -618,7 +689,10 @@
             "code": "CloudFront",
             "cost": 5200,
             "regions": [
-              { "name": "Global", "cost": 5200 }
+              {
+                "name": "Global",
+                "cost": 5200
+              }
             ]
           },
           {
@@ -626,8 +700,14 @@
             "code": "ElastiCache",
             "cost": 3300,
             "regions": [
-              { "name": "us-east-1", "cost": 2000 },
-              { "name": "eu-west-1", "cost": 1300 }
+              {
+                "name": "us-east-1",
+                "cost": 2000
+              },
+              {
+                "name": "eu-west-1",
+                "cost": 1300
+              }
             ]
           }
         ]
@@ -638,6 +718,21 @@
         "displayName": "AWS Analytics Account",
         "accountNumber": "987654321098",
         "cost": 30000,
+        "usageDateCost": 29850,
+        "invoiceMonthCost": 30000,
+        "crossOverAmount": 150,
+        "hasCrossOver": true,
+        "crossOverDirection": "from-prev-month",
+        "crossOverNote": "Usage from Sept 28-30 appears on Oct invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-09-28",
+            "2024-09-29",
+            "2024-09-30"
+          ],
+          "invoiceMonth": "2024-10",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": 12.5,
         "costModelId": "aws-enterprise-discount",
         "services": [
@@ -646,7 +741,10 @@
             "code": "S3",
             "cost": 8500,
             "regions": [
-              { "name": "us-east-1", "cost": 8500 }
+              {
+                "name": "us-east-1",
+                "cost": 8500
+              }
             ]
           },
           {
@@ -654,7 +752,10 @@
             "code": "Redshift",
             "cost": 12000,
             "regions": [
-              { "name": "us-east-1", "cost": 12000 }
+              {
+                "name": "us-east-1",
+                "cost": 12000
+              }
             ]
           },
           {
@@ -662,7 +763,10 @@
             "code": "EMR",
             "cost": 5500,
             "regions": [
-              { "name": "us-east-1", "cost": 5500 }
+              {
+                "name": "us-east-1",
+                "cost": 5500
+              }
             ]
           },
           {
@@ -670,7 +774,10 @@
             "code": "Athena",
             "cost": 2500,
             "regions": [
-              { "name": "us-east-1", "cost": 2500 }
+              {
+                "name": "us-east-1",
+                "cost": 2500
+              }
             ]
           },
           {
@@ -678,7 +785,10 @@
             "code": "Glue",
             "cost": 1500,
             "regions": [
-              { "name": "us-east-1", "cost": 1500 }
+              {
+                "name": "us-east-1",
+                "cost": 1500
+              }
             ]
           }
         ]
@@ -695,6 +805,21 @@
         "displayName": "GCP Production",
         "billingAccountId": "01AB23-CD45EF-67890G",
         "cost": 65000,
+        "usageDateCost": 65000,
+        "invoiceMonthCost": 64760,
+        "crossOverAmount": 240,
+        "hasCrossOver": true,
+        "crossOverDirection": "to-next-month",
+        "crossOverNote": "Usage from Oct 29-31 appears on Nov invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-10-29",
+            "2024-10-30",
+            "2024-10-31"
+          ],
+          "invoiceMonth": "2024-11",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": 8.3,
         "costModelId": "gcp-committed-use",
         "projects": [
@@ -714,8 +839,14 @@
                 "code": "compute",
                 "cost": 18000,
                 "regions": [
-                  { "name": "us-central1", "cost": 11000 },
-                  { "name": "europe-west1", "cost": 7000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 11000
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 7000
+                  }
                 ]
               },
               {
@@ -723,8 +854,14 @@
                 "code": "loadbalancing",
                 "cost": 4500,
                 "regions": [
-                  { "name": "us-central1", "cost": 2500 },
-                  { "name": "europe-west1", "cost": 2000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 2500
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 2000
+                  }
                 ]
               },
               {
@@ -732,8 +869,14 @@
                 "code": "storage",
                 "cost": 8500,
                 "regions": [
-                  { "name": "us-central1", "cost": 5000 },
-                  { "name": "europe-west1", "cost": 3500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 5000
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 3500
+                  }
                 ]
               },
               {
@@ -741,7 +884,10 @@
                 "code": "cdn",
                 "cost": 4000,
                 "regions": [
-                  { "name": "Global", "cost": 4000 }
+                  {
+                    "name": "Global",
+                    "cost": 4000
+                  }
                 ]
               }
             ]
@@ -762,8 +908,14 @@
                 "code": "gke",
                 "cost": 12000,
                 "regions": [
-                  { "name": "us-central1", "cost": 8000 },
-                  { "name": "europe-west1", "cost": 4000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 8000
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 4000
+                  }
                 ]
               },
               {
@@ -771,8 +923,14 @@
                 "code": "cloudsql",
                 "cost": 7000,
                 "regions": [
-                  { "name": "us-central1", "cost": 4500 },
-                  { "name": "europe-west1", "cost": 2500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 4500
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 2500
+                  }
                 ]
               },
               {
@@ -780,8 +938,14 @@
                 "code": "functions",
                 "cost": 3000,
                 "regions": [
-                  { "name": "us-central1", "cost": 2000 },
-                  { "name": "europe-west1", "cost": 1000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 2000
+                  },
+                  {
+                    "name": "europe-west1",
+                    "cost": 1000
+                  }
                 ]
               }
             ]
@@ -802,7 +966,10 @@
                 "code": "bigquery",
                 "cost": 6500,
                 "regions": [
-                  { "name": "us-central1", "cost": 6500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 6500
+                  }
                 ]
               },
               {
@@ -810,7 +977,10 @@
                 "code": "storage",
                 "cost": 1500,
                 "regions": [
-                  { "name": "us-central1", "cost": 1500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 1500
+                  }
                 ]
               }
             ]
@@ -823,6 +993,21 @@
         "displayName": "GCP ML Research",
         "billingAccountId": "01AB23-CD45EF-67890G",
         "cost": 30000,
+        "usageDateCost": 29880,
+        "invoiceMonthCost": 30000,
+        "crossOverAmount": 120,
+        "hasCrossOver": true,
+        "crossOverDirection": "from-prev-month",
+        "crossOverNote": "Usage from Sept 28-30 appears on Oct invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-09-28",
+            "2024-09-29",
+            "2024-09-30"
+          ],
+          "invoiceMonth": "2024-10",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": 34.7,
         "costModelId": "gcp-committed-use",
         "projects": [
@@ -842,7 +1027,10 @@
                 "code": "compute",
                 "cost": 16000,
                 "regions": [
-                  { "name": "us-central1", "cost": 16000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 16000
+                  }
                 ],
                 "note": "GPU instances"
               },
@@ -851,7 +1039,10 @@
                 "code": "vertexai",
                 "cost": 4000,
                 "regions": [
-                  { "name": "us-central1", "cost": 4000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 4000
+                  }
                 ]
               },
               {
@@ -859,7 +1050,10 @@
                 "code": "storage",
                 "cost": 2000,
                 "regions": [
-                  { "name": "us-central1", "cost": 2000 }
+                  {
+                    "name": "us-central1",
+                    "cost": 2000
+                  }
                 ]
               }
             ]
@@ -880,7 +1074,10 @@
                 "code": "vertexai",
                 "cost": 5500,
                 "regions": [
-                  { "name": "us-central1", "cost": 5500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 5500
+                  }
                 ]
               },
               {
@@ -888,7 +1085,10 @@
                 "code": "bigquery",
                 "cost": 2500,
                 "regions": [
-                  { "name": "us-central1", "cost": 2500 }
+                  {
+                    "name": "us-central1",
+                    "cost": 2500
+                  }
                 ]
               }
             ]
@@ -907,6 +1107,21 @@
         "displayName": "Azure Enterprise",
         "subscriptionId": "12345678-1234-1234-1234-123456789012",
         "cost": 35000,
+        "usageDateCost": 35000,
+        "invoiceMonthCost": 34825,
+        "crossOverAmount": 175,
+        "hasCrossOver": true,
+        "crossOverDirection": "to-next-month",
+        "crossOverNote": "Usage from Oct 29-31 appears on Nov invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-10-29",
+            "2024-10-30",
+            "2024-10-31"
+          ],
+          "invoiceMonth": "2024-11",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": 3.5,
         "costModelId": "azure-reserved-instances",
         "services": [
@@ -915,8 +1130,14 @@
             "code": "VirtualMachines",
             "cost": 15000,
             "regions": [
-              { "name": "East US", "cost": 9000 },
-              { "name": "West Europe", "cost": 6000 }
+              {
+                "name": "East US",
+                "cost": 9000
+              },
+              {
+                "name": "West Europe",
+                "cost": 6000
+              }
             ]
           },
           {
@@ -924,8 +1145,14 @@
             "code": "AKS",
             "cost": 8500,
             "regions": [
-              { "name": "East US", "cost": 5500 },
-              { "name": "West Europe", "cost": 3000 }
+              {
+                "name": "East US",
+                "cost": 5500
+              },
+              {
+                "name": "West Europe",
+                "cost": 3000
+              }
             ]
           },
           {
@@ -933,8 +1160,14 @@
             "code": "SQLDatabase",
             "cost": 6000,
             "regions": [
-              { "name": "East US", "cost": 4000 },
-              { "name": "West Europe", "cost": 2000 }
+              {
+                "name": "East US",
+                "cost": 4000
+              },
+              {
+                "name": "West Europe",
+                "cost": 2000
+              }
             ]
           },
           {
@@ -942,8 +1175,14 @@
             "code": "BlobStorage",
             "cost": 3500,
             "regions": [
-              { "name": "East US", "cost": 2000 },
-              { "name": "West Europe", "cost": 1500 }
+              {
+                "name": "East US",
+                "cost": 2000
+              },
+              {
+                "name": "West Europe",
+                "cost": 1500
+              }
             ]
           },
           {
@@ -951,8 +1190,14 @@
             "code": "Functions",
             "cost": 2000,
             "regions": [
-              { "name": "East US", "cost": 1200 },
-              { "name": "West Europe", "cost": 800 }
+              {
+                "name": "East US",
+                "cost": 1200
+              },
+              {
+                "name": "West Europe",
+                "cost": 800
+              }
             ]
           }
         ]
@@ -963,6 +1208,21 @@
         "displayName": "Azure Backup & DR",
         "subscriptionId": "87654321-4321-4321-4321-210987654321",
         "cost": 15000,
+        "usageDateCost": 14920,
+        "invoiceMonthCost": 15000,
+        "crossOverAmount": 80,
+        "hasCrossOver": true,
+        "crossOverDirection": "from-prev-month",
+        "crossOverNote": "Usage from Sept 28-30 appears on Oct invoice",
+        "crossOverPeriod": {
+          "usageDates": [
+            "2024-09-28",
+            "2024-09-29",
+            "2024-09-30"
+          ],
+          "invoiceMonth": "2024-10",
+          "daysInThreshold": 3
+        },
         "monthOverMonthChange": -1.2,
         "costModelId": "azure-reserved-instances",
         "services": [
@@ -971,8 +1231,14 @@
             "code": "Backup",
             "cost": 7000,
             "regions": [
-              { "name": "Central US", "cost": 4000 },
-              { "name": "North Europe", "cost": 3000 }
+              {
+                "name": "Central US",
+                "cost": 4000
+              },
+              {
+                "name": "North Europe",
+                "cost": 3000
+              }
             ]
           },
           {
@@ -980,8 +1246,14 @@
             "code": "SiteRecovery",
             "cost": 4500,
             "regions": [
-              { "name": "Central US", "cost": 2500 },
-              { "name": "North Europe", "cost": 2000 }
+              {
+                "name": "Central US",
+                "cost": 2500
+              },
+              {
+                "name": "North Europe",
+                "cost": 2000
+              }
             ]
           },
           {
@@ -989,8 +1261,14 @@
             "code": "BlobStorage",
             "cost": 3500,
             "regions": [
-              { "name": "Central US", "cost": 2000 },
-              { "name": "North Europe", "cost": 1500 }
+              {
+                "name": "Central US",
+                "cost": 2000
+              },
+              {
+                "name": "North Europe",
+                "cost": 1500
+              }
             ]
           }
         ]
@@ -1058,58 +1336,126 @@
     {
       "id": "tag-001",
       "key": "environment",
-      "values": ["production", "staging", "development"],
+      "values": [
+        "production",
+        "staging",
+        "development"
+      ],
       "enabled": true,
-      "integrations": ["OpenShift", "AWS", "GCP", "Azure"]
+      "integrations": [
+        "OpenShift",
+        "AWS",
+        "GCP",
+        "Azure"
+      ]
     },
     {
       "id": "tag-002",
       "key": "team",
-      "values": ["frontend", "backend", "platform", "data", "ml-research", "mobile", "qa"],
+      "values": [
+        "frontend",
+        "backend",
+        "platform",
+        "data",
+        "ml-research",
+        "mobile",
+        "qa"
+      ],
       "enabled": true,
-      "integrations": ["OpenShift", "GCP"]
+      "integrations": [
+        "OpenShift",
+        "GCP"
+      ]
     },
     {
       "id": "tag-003",
       "key": "costCenter",
-      "values": ["engineering", "research", "sales", "marketing"],
+      "values": [
+        "engineering",
+        "research",
+        "sales",
+        "marketing"
+      ],
       "enabled": true,
-      "integrations": ["OpenShift", "GCP"]
+      "integrations": [
+        "OpenShift",
+        "GCP"
+      ]
     },
     {
       "id": "tag-004",
       "key": "owner",
-      "values": ["john-smith", "jane-doe", "bob-wilson"],
+      "values": [
+        "john-smith",
+        "jane-doe",
+        "bob-wilson"
+      ],
       "enabled": false,
-      "integrations": ["AWS", "Azure"]
+      "integrations": [
+        "AWS",
+        "Azure"
+      ]
     },
     {
       "id": "tag-005",
       "key": "application",
-      "values": ["api-gateway", "user-service", "payment-service", "analytics-engine", "ml-training"],
+      "values": [
+        "api-gateway",
+        "user-service",
+        "payment-service",
+        "analytics-engine",
+        "ml-training"
+      ],
       "enabled": true,
-      "integrations": ["OpenShift", "AWS", "GCP"]
+      "integrations": [
+        "OpenShift",
+        "AWS",
+        "GCP"
+      ]
     },
     {
       "id": "tag-006",
       "key": "project",
-      "values": ["project-alpha", "project-beta", "project-gamma"],
+      "values": [
+        "project-alpha",
+        "project-beta",
+        "project-gamma"
+      ],
       "enabled": true,
-      "integrations": ["AWS", "GCP", "Azure"]
+      "integrations": [
+        "AWS",
+        "GCP",
+        "Azure"
+      ]
     },
     {
       "id": "tag-007",
       "key": "version",
-      "values": ["v1", "v2", "v3", "canary"],
+      "values": [
+        "v1",
+        "v2",
+        "v3",
+        "canary"
+      ],
       "enabled": false,
-      "integrations": ["OpenShift"]
+      "integrations": [
+        "OpenShift"
+      ]
     },
     {
       "id": "tag-008",
       "key": "storageclass",
-      "values": ["gp3", "gp2", "io1", "standard"],
+      "values": [
+        "gp3",
+        "gp2",
+        "io1",
+        "standard"
+      ],
       "enabled": true,
-      "integrations": ["OpenShift", "AWS"]
+      "integrations": [
+        "OpenShift",
+        "AWS"
+      ]
     }
   ],
   "tagMappings": {
@@ -1119,9 +1465,21 @@
         "id": "mapping-001",
         "parentKey": "environment",
         "childKeys": [
-          { "source": "AWS", "key": "Environment", "description": "AWS Environment tag" },
-          { "source": "GCP", "key": "env", "description": "GCP environment label" },
-          { "source": "Azure", "key": "Env", "description": "Azure Environment tag" }
+          {
+            "source": "AWS",
+            "key": "Environment",
+            "description": "AWS Environment tag"
+          },
+          {
+            "source": "GCP",
+            "key": "env",
+            "description": "GCP environment label"
+          },
+          {
+            "source": "Azure",
+            "key": "Env",
+            "description": "Azure Environment tag"
+          }
         ],
         "enabled": true,
         "lastModified": "2024-10-15"
@@ -1130,9 +1488,21 @@
         "id": "mapping-002",
         "parentKey": "costCenter",
         "childKeys": [
-          { "source": "AWS", "key": "CostCenter", "description": "AWS Cost Center tag" },
-          { "source": "GCP", "key": "cost_center", "description": "GCP cost center label" },
-          { "source": "Azure", "key": "CostCentre", "description": "Azure Cost Centre tag" }
+          {
+            "source": "AWS",
+            "key": "CostCenter",
+            "description": "AWS Cost Center tag"
+          },
+          {
+            "source": "GCP",
+            "key": "cost_center",
+            "description": "GCP cost center label"
+          },
+          {
+            "source": "Azure",
+            "key": "CostCentre",
+            "description": "Azure Cost Centre tag"
+          }
         ],
         "enabled": true,
         "lastModified": "2024-10-10"
@@ -1141,8 +1511,16 @@
         "id": "mapping-003",
         "parentKey": "application",
         "childKeys": [
-          { "source": "AWS", "key": "App", "description": "AWS Application tag" },
-          { "source": "GCP", "key": "application", "description": "GCP application label" }
+          {
+            "source": "AWS",
+            "key": "App",
+            "description": "AWS Application tag"
+          },
+          {
+            "source": "GCP",
+            "key": "application",
+            "description": "GCP application label"
+          }
         ],
         "enabled": true,
         "lastModified": "2024-10-12"
@@ -1151,8 +1529,16 @@
         "id": "mapping-004",
         "parentKey": "team",
         "childKeys": [
-          { "source": "GCP", "key": "team", "description": "GCP team label" },
-          { "source": "Azure", "key": "Team", "description": "Azure Team tag" }
+          {
+            "source": "GCP",
+            "key": "team",
+            "description": "GCP team label"
+          },
+          {
+            "source": "Azure",
+            "key": "Team",
+            "description": "Azure Team tag"
+          }
         ],
         "enabled": false,
         "lastModified": "2024-09-28"
@@ -1189,7 +1575,10 @@
             "type": "tag",
             "key": "environment",
             "operator": "in",
-            "value": ["development", "staging"]
+            "value": [
+              "development",
+              "staging"
+            ]
           }
         ],
         "color": "#3498DB",
@@ -1229,7 +1618,12 @@
           {
             "type": "service",
             "operator": "in",
-            "value": ["S3", "Cloud Storage", "Blob Storage", "Backup"]
+            "value": [
+              "S3",
+              "Cloud Storage",
+              "Blob Storage",
+              "Backup"
+            ]
           }
         ],
         "color": "#F39C12",
@@ -1406,4 +1800,3 @@
     }
   }
 }
-
