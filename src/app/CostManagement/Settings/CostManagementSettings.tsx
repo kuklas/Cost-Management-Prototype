@@ -205,12 +205,82 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [wizardSelectedIntegrations, setWizardSelectedIntegrations] = React.useState<string[]>([]);
   const [wizardIntegrationSearchValue, setWizardIntegrationSearchValue] = React.useState('');
 
+  // OCP Wizard - Price list state
+  const [ocpShowCreateRate, setOcpShowCreateRate] = React.useState(false);
+  const [ocpPriceListRates, setOcpPriceListRates] = React.useState<any[]>([]);
+  const [ocpRateDescription, setOcpRateDescription] = React.useState('');
+  const [ocpRateMetricOpen, setOcpRateMetricOpen] = React.useState(false);
+  const [ocpRateMetric, setOcpRateMetric] = React.useState('CPU');
+  const [ocpRateMeasurementOpen, setOcpRateMeasurementOpen] = React.useState(false);
+  const [ocpRateMeasurement, setOcpRateMeasurement] = React.useState('Request (core-hours)');
+  const [ocpRateCalculationType, setOcpRateCalculationType] = React.useState<'infrastructure' | 'supplementary'>('supplementary');
+  const [ocpRateByTag, setOcpRateByTag] = React.useState(false);
+  const [ocpRateTagKey, setOcpRateTagKey] = React.useState('');
+  const [ocpRateTagValues, setOcpRateTagValues] = React.useState<Array<{value: string, rate: string, description: string, isDefault: boolean}>>([{value: '', rate: '', description: '', isDefault: false}]);
+  const [ocpExpandedRates, setOcpExpandedRates] = React.useState<Set<number>>(new Set());
+
+  // OCP Wizard - Cost calculations state
+  const [ocpMarkupDiscount, setOcpMarkupDiscount] = React.useState<'markup' | 'discount'>('markup');
+  const [ocpMarkupRate, setOcpMarkupRate] = React.useState('0');
+
+  // OCP Wizard - Cost distribution state
+  const [ocpDistributionType, setOcpDistributionType] = React.useState<'cpu' | 'memory'>('cpu');
+  const [ocpDistributePlatform, setOcpDistributePlatform] = React.useState(true);
+  const [ocpDistributeWorker, setOcpDistributeWorker] = React.useState(true);
+  const [ocpDistributeNetwork, setOcpDistributeNetwork] = React.useState(true);
+  const [ocpDistributeStorage, setOcpDistributeStorage] = React.useState(true);
+
+  // Function to reset wizard state
+  const resetWizardState = () => {
+    setWizardName('');
+    setWizardDescription('');
+    setWizardIntegration('');
+    setWizardCurrency('USD ($) - United States Dollar');
+    setWizardIsDiscount(false);
+    setWizardMarkupRate('0');
+    setWizardSelectedIntegrations([]);
+    setWizardIntegrationSearchValue('');
+    
+    // Reset OCP-specific state
+    setOcpShowCreateRate(false);
+    setOcpPriceListRates([]);
+    setOcpRateDescription('');
+    setOcpRateMetric('CPU');
+    setOcpRateMeasurement('Request (core-hours)');
+    setOcpRateCalculationType('supplementary');
+    setOcpRateByTag(false);
+    setOcpRateTagKey('');
+    setOcpRateTagValues([{value: '', rate: '', description: '', isDefault: false}]);
+    setOcpExpandedRates(new Set());
+    setOcpMarkupDiscount('markup');
+    setOcpMarkupRate('0');
+    setOcpDistributionType('cpu');
+    setOcpDistributePlatform(true);
+    setOcpDistributeWorker(true);
+    setOcpDistributeNetwork(true);
+    setOcpDistributeStorage(true);
+  };
+
   // Mock AWS integrations data
   const awsIntegrations = [
     { id: 'aws-costlab', name: 'AWS Costlab', assignedCostModel: 'test-dla' },
     { id: 'aws-customer-filtered', name: 'AWS-Customer-Filtered-Data-Demo', assignedCostModel: 'simple' },
     { id: 'aws-dev-nise', name: 'AWS - Dev Nise populator', assignedCostModel: '' },
     { id: 'aws-redhat', name: 'AWS Red Hat Cost Management', assignedCostModel: 'AWS markup' },
+  ];
+
+  // Mock OCP integrations data
+  const ocpIntegrations = [
+    { id: 'acm-demo-romeo-hub', name: 'acm-demo-romeo-hub', operatorVersion: 'Not available', assignedCostModel: 'OCP' },
+    { id: 'democluster46-go', name: 'DemoCluster4.6-Go', operatorVersion: 'Not available', assignedCostModel: 'Go Operator' },
+    { id: 'demolab', name: 'demolab', operatorVersion: 'Up to date', assignedCostModel: 'Cost Model' },
+    { id: 'dnakabaa-sa', name: 'dnakabaa-sa-scope-source-create-test', operatorVersion: 'Not available', assignedCostModel: 'openshift on prem' },
+    { id: 'enablement-demo', name: 'Enablement Demo 202301', operatorVersion: 'Not available', assignedCostModel: 'middle' },
+    { id: 'mbu-demo', name: 'MBU Demo Cluster', operatorVersion: 'Not available', assignedCostModel: 'Effective cost demo' },
+    { id: 'ocp-onprem01', name: 'OCP-OnPrem01', operatorVersion: 'Up to date', assignedCostModel: 'Monthly Cost Demo' },
+    { id: 'openshift-aws', name: 'Openshift on AWS', operatorVersion: 'Up to date', assignedCostModel: '' },
+    { id: 'openshift-azure', name: 'Openshift on Azure', operatorVersion: 'Up to date', assignedCostModel: '' },
+    { id: 'openshift-gcp', name: 'OpenShift on GCP - Nise Populator', operatorVersion: 'Up to date', assignedCostModel: 'advanced' },
   ];
 
   // Get cost models from database
@@ -697,22 +767,6 @@ const CostManagementSettings: React.FunctionComponent = () => {
                               </SelectOption>
                             </SelectList>
                           </Select>
-                        </FlexItem>
-                        <FlexItem>
-                          <Popover
-                            aria-label="Period type info"
-                            headerContent={<div>Calendar vs Billing period type</div>}
-                            bodyContent={
-                              <div>
-                                <p><strong>Calendar:</strong> Standard monthly periods (1st to last day of month). Shows costs when services were used.</p>
-                                <p style={{ marginTop: '8px' }}><strong>Billing:</strong> Includes buffer zones to account for cloud provider billing cycles where usage near month boundaries may appear on different invoices.</p>
-                              </div>
-                            }
-                          >
-                            <Button variant="plain" aria-label="More info">
-                              <OutlinedQuestionCircleIcon />
-                            </Button>
-                          </Popover>
                         </FlexItem>
                       </Flex>
                     </FlexItem>
@@ -1662,11 +1716,17 @@ const CostManagementSettings: React.FunctionComponent = () => {
       <Modal
         variant={ModalVariant.large}
         isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
+        onClose={() => {
+          resetWizardState();
+          setIsWizardOpen(false);
+        }}
         aria-labelledby="create-cost-model-wizard-title"
       >
         <Wizard
-          onClose={() => setIsWizardOpen(false)}
+          onClose={() => {
+            resetWizardState();
+            setIsWizardOpen(false);
+          }}
           header={
             <div style={{ 
               padding: '24px', 
@@ -2132,6 +2192,893 @@ const CostManagementSettings: React.FunctionComponent = () => {
                 </StackItem>
               </Stack>
             </WizardStep>
+          )}
+
+          {/* OpenShift Container Platform Wizard Steps */}
+          {/* Step 2: Price list - only for OCP */}
+          {wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+                name="Price list"
+                id="ocp-price-list-step"
+              >
+                <Stack hasGutter>
+                  <StackItem>
+                    <Title headingLevel="h2" size="xl">
+                      {ocpShowCreateRate ? 'Create a price list' : 'Create a price list'}
+                    </Title>
+                  </StackItem>
+
+                  {!ocpShowCreateRate && (
+                    <>
+                      <StackItem>
+                        <Content>
+                          <p>The following is a list of rates you have set so far for this price list.</p>
+                        </Content>
+                      </StackItem>
+
+                      <StackItem>
+                        <Toolbar id="price-list-toolbar" style={{ gap: '1rem' }}>
+                          <ToolbarContent>
+                            <ToolbarGroup variant="toggle-group" toggleIcon={<FilterIcon />}>
+                              <ToolbarItem>
+                                <Select
+                                  toggle={(toggleRef: React.Ref<any>) => (
+                                    <MenuToggle
+                                      ref={toggleRef}
+                                      onClick={() => {}}
+                                      isExpanded={false}
+                                      isDisabled={ocpPriceListRates.length === 0}
+                                      style={{ width: '200px' }}
+                                    >
+                                      Metric
+                                    </MenuToggle>
+                                  )}
+                                  isOpen={false}
+                                >
+                                  <SelectList></SelectList>
+                                </Select>
+                              </ToolbarItem>
+                              <ToolbarItem></ToolbarItem>
+                              <ToolbarItem>
+                                <Select
+                                  toggle={(toggleRef: React.Ref<any>) => (
+                                    <MenuToggle
+                                      ref={toggleRef}
+                                      onClick={() => {}}
+                                      isExpanded={false}
+                                      isDisabled={ocpPriceListRates.length === 0}
+                                    >
+                                      Filter by metrics
+                                    </MenuToggle>
+                                  )}
+                                  isOpen={false}
+                                >
+                                  <SelectList></SelectList>
+                                </Select>
+                              </ToolbarItem>
+                            </ToolbarGroup>
+                            <ToolbarItem>
+                              <Button variant="primary" onClick={() => setOcpShowCreateRate(true)}>
+                                Create rate
+                              </Button>
+                            </ToolbarItem>
+                            <ToolbarItem variant="pagination">
+                              <Pagination
+                                itemCount={ocpPriceListRates.length}
+                                perPage={10}
+                                page={1}
+                                variant={PaginationVariant.top}
+                                titles={{
+                                  paginationAriaLabel: 'Assign integrations top pagination',
+                                }}
+                              />
+                            </ToolbarItem>
+                          </ToolbarContent>
+                        </Toolbar>
+
+                        {ocpPriceListRates.length === 0 ? (
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                            <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+                              <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+                                <svg style={{ width: '48px', height: '48px' }} fill="currentColor" viewBox="0 0 512 512">
+                                  <path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z" />
+                                </svg>
+                              </div>
+                              <Title headingLevel="h2" size="lg" style={{ marginBottom: '8px' }}>
+                                A price list has not been created.
+                              </Title>
+                              <div>
+                                To skip this step, click the <strong>next</strong> button.<br />
+                                You can create a price list or modify one at a later time.
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Table aria-label="Price list rates table">
+                              <Thead>
+                                <Tr>
+                                  <Th>Metric</Th>
+                                  <Th>Description</Th>
+                                  <Th>Measurement</Th>
+                                  <Th>Calculation type</Th>
+                                  <Th>Rate</Th>
+                                  <Th></Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody>
+                                {ocpPriceListRates.map((rate, index) => (
+                                  <React.Fragment key={index}>
+                                    <Tr>
+                                      <Td>{rate.metric}</Td>
+                                      <Td>{rate.description}</Td>
+                                      <Td>{rate.measurement}</Td>
+                                      <Td>{rate.calculationType}</Td>
+                                      <Td>
+                                        <Button
+                                          variant="link"
+                                          onClick={() => {
+                                            const newExpanded = new Set(ocpExpandedRates);
+                                            if (ocpExpandedRates.has(index)) {
+                                              newExpanded.delete(index);
+                                            } else {
+                                              newExpanded.add(index);
+                                            }
+                                            setOcpExpandedRates(newExpanded);
+                                          }}
+                                        >
+                                          Various
+                                        </Button>
+                                      </Td>
+                                      <Td>
+                                        <Button variant="plain" aria-label="Actions">
+                                          <EllipsisVIcon />
+                                        </Button>
+                                      </Td>
+                                    </Tr>
+                                    {ocpExpandedRates.has(index) && (
+                                      <Tr isExpanded>
+                                        <Td colSpan={6}>
+                                          <Table variant="compact" borders={false}>
+                                            <Thead>
+                                              <Tr>
+                                                <Th>Tag key</Th>
+                                                <Th>Tag value</Th>
+                                                <Th>Rate</Th>
+                                                <Th>Description</Th>
+                                                <Th>Default</Th>
+                                              </Tr>
+                                            </Thead>
+                                            <Tbody>
+                                              {rate.tagValues.map((tv: any, tvIndex: number) => (
+                                                <Tr key={tvIndex}>
+                                                  <Td>{rate.tagKey}</Td>
+                                                  <Td>{tv.value}</Td>
+                                                  <Td>${tv.rate}</Td>
+                                                  <Td>{tv.description}</Td>
+                                                  <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                                </Tr>
+                                              ))}
+                                            </Tbody>
+                                          </Table>
+                                        </Td>
+                                      </Tr>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </Tbody>
+                            </Table>
+
+                            <Toolbar>
+                              <ToolbarContent>
+                                <ToolbarItem variant="pagination">
+                                  <Pagination
+                                    itemCount={ocpPriceListRates.length}
+                                    perPage={10}
+                                    page={1}
+                                    variant={PaginationVariant.bottom}
+                                    titles={{
+                                      paginationAriaLabel: 'Assign integrations bottom pagination',
+                                    }}
+                                    style={{ paddingTop: '0.5rem' }}
+                                  />
+                                </ToolbarItem>
+                              </ToolbarContent>
+                            </Toolbar>
+                          </>
+                        )}
+                      </StackItem>
+                    </>
+                  )}
+
+                  {ocpShowCreateRate && (
+                    <>
+                      <StackItem>
+                        <Content>
+                          <h3>
+                            Select the metric you want to assign a price to, and specify a measurement unit and rate. You can optionally set multiple rates for particular tags.
+                          </h3>
+                        </Content>
+                      </StackItem>
+
+                      <StackItem>
+                        <Form>
+                          <FormGroup label="Description" fieldId="description" style={{ width: '360px' }}>
+                            <TextInput
+                              id="description"
+                              value={ocpRateDescription}
+                              onChange={(_event, val) => setOcpRateDescription(val)}
+                            />
+                          </FormGroup>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <FormGroup label="Metric" isRequired fieldId="metric-selector" style={{ width: '360px' }}>
+                              <Select
+                                toggle={(toggleRef: React.Ref<any>) => (
+                                  <MenuToggle
+                                    ref={toggleRef}
+                                    onClick={() => setOcpRateMetricOpen(!ocpRateMetricOpen)}
+                                    isExpanded={ocpRateMetricOpen}
+                                    style={{ width: '100%' }}
+                                    aria-label="Select metric"
+                                  >
+                                    {ocpRateMetric}
+                                  </MenuToggle>
+                                )}
+                                isOpen={ocpRateMetricOpen}
+                                onOpenChange={(isOpen) => setOcpRateMetricOpen(isOpen)}
+                                onSelect={(_e, value) => {
+                                  setOcpRateMetric(value as string);
+                                  setOcpRateMetricOpen(false);
+                                }}
+                              >
+                                <SelectList>
+                                  <SelectOption value="CPU">CPU</SelectOption>
+                                  <SelectOption value="Cluster">Cluster</SelectOption>
+                                  <SelectOption value="Memory">Memory</SelectOption>
+                                  <SelectOption value="Node">Node</SelectOption>
+                                  <SelectOption value="Persistent volume claims">Persistent volume claims</SelectOption>
+                                  <SelectOption value="Project">Project</SelectOption>
+                                  <SelectOption value="Storage">Storage</SelectOption>
+                                  <SelectOption value="Virtual machine">Virtual machine</SelectOption>
+                                </SelectList>
+                              </Select>
+                            </FormGroup>
+
+                            <FormGroup label="Measurement" isRequired fieldId="measurement-selector" style={{ width: '360px' }}>
+                              <Select
+                                toggle={(toggleRef: React.Ref<any>) => (
+                                  <MenuToggle
+                                    ref={toggleRef}
+                                    onClick={() => setOcpRateMeasurementOpen(!ocpRateMeasurementOpen)}
+                                    isExpanded={ocpRateMeasurementOpen}
+                                    style={{ width: '100%' }}
+                                    aria-label="Select measurement"
+                                  >
+                                    {ocpRateMeasurement}
+                                  </MenuToggle>
+                                )}
+                                isOpen={ocpRateMeasurementOpen}
+                                onOpenChange={(isOpen) => setOcpRateMeasurementOpen(isOpen)}
+                                onSelect={(_e, value) => {
+                                  setOcpRateMeasurement(value as string);
+                                  setOcpRateMeasurementOpen(false);
+                                }}
+                              >
+                                <SelectList>
+                                  <SelectOption value="Request (core-hours)">Request (core-hours)</SelectOption>
+                                  <SelectOption value="Usage (core-hours)">Usage (core-hours)</SelectOption>
+                                  <SelectOption value="Effective-usage (core-hours)">Effective-usage (core-hours)</SelectOption>
+                                </SelectList>
+                              </Select>
+                            </FormGroup>
+                          </div>
+
+                          <FormGroup label="Calculation type" fieldId="calculation">
+                            <Radio
+                              id="calculation-infra"
+                              name="calculation"
+                              label="Infrastructure"
+                              isChecked={ocpRateCalculationType === 'infrastructure'}
+                              onChange={() => setOcpRateCalculationType('infrastructure')}
+                            />
+                            <Radio
+                              id="calculation-suppl"
+                              name="calculation"
+                              label="Supplementary"
+                              isChecked={ocpRateCalculationType === 'supplementary'}
+                              onChange={() => setOcpRateCalculationType('supplementary')}
+                              style={{ marginLeft: '16px' }}
+                            />
+                          </FormGroup>
+
+                          <Checkbox
+                            id="enter-rate-by-tag"
+                            label="Enter rate by tag"
+                            isChecked={ocpRateByTag}
+                            onChange={(_event, checked) => setOcpRateByTag(checked)}
+                          />
+
+                          {ocpRateByTag && (
+                            <>
+                              <FormGroup label="Filter by tag key" isRequired fieldId="tag-key" style={{ width: '360px' }}>
+                                <TextInput
+                                  id="tag-key"
+                                  value={ocpRateTagKey}
+                                  onChange={(_event, val) => setOcpRateTagKey(val)}
+                                  placeholder="Enter a tag key"
+                                />
+                              </FormGroup>
+
+                              {ocpRateTagValues.map((tagValue, index) => (
+                                <div key={index} style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', marginBottom: '16px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '16px' }}>=</span>
+                                  </div>
+                                  <FormGroup label="Tag value" isRequired fieldId={`tagValue_${index}`} style={{ minWidth: '200px' }}>
+                                    <TextInput
+                                      id={`tagValue_${index}`}
+                                      value={tagValue.value}
+                                      onChange={(_event, val) => {
+                                        const newValues = [...ocpRateTagValues];
+                                        newValues[index].value = val;
+                                        setOcpRateTagValues(newValues);
+                                      }}
+                                      placeholder="Enter a tag value"
+                                    />
+                                  </FormGroup>
+                                  <FormGroup label="Rate" isRequired fieldId={`rate_${index}`} style={{ minWidth: '200px' }}>
+                                    <InputGroup>
+                                      <InputGroupItem isFill>
+                                        <span style={{ marginRight: '8px', fontWeight: 700 }}>$</span>
+                                        <TextInput
+                                          id={`rate_${index}`}
+                                          value={tagValue.rate}
+                                          onChange={(_event, val) => {
+                                            const newValues = [...ocpRateTagValues];
+                                            newValues[index].rate = val;
+                                            setOcpRateTagValues(newValues);
+                                          }}
+                                          placeholder="0.00"
+                                          aria-label="Assign rate"
+                                        />
+                                      </InputGroupItem>
+                                    </InputGroup>
+                                  </FormGroup>
+                                  <FormGroup label="Description" fieldId={`desc_${index}`} style={{ minWidth: '200px' }}>
+                                    <TextInput
+                                      id={`desc_${index}`}
+                                      value={tagValue.description}
+                                      onChange={(_event, val) => {
+                                        const newValues = [...ocpRateTagValues];
+                                        newValues[index].description = val;
+                                        setOcpRateTagValues(newValues);
+                                      }}
+                                      placeholder="Enter a tag description"
+                                    />
+                                  </FormGroup>
+                                  <FormGroup label="Default" fieldId={`isDefault_${index}`}>
+                                    <Checkbox
+                                      id={`isDefault_${index}`}
+                                      isChecked={tagValue.isDefault}
+                                      onChange={(_event, checked) => {
+                                        const newValues = [...ocpRateTagValues];
+                                        newValues[index].isDefault = checked;
+                                        setOcpRateTagValues(newValues);
+                                      }}
+                                    />
+                                  </FormGroup>
+                                  <FormGroup label={<div>&nbsp;</div>} fieldId="remove-tag">
+                                    <Button
+                                      variant="plain"
+                                      aria-label="Remove tag value"
+                                      isDisabled={ocpRateTagValues.length === 1}
+                                      onClick={() => {
+                                        const newValues = ocpRateTagValues.filter((_, i) => i !== index);
+                                        setOcpRateTagValues(newValues);
+                                      }}
+                                    >
+                                      <MinusCircleIcon />
+                                    </Button>
+                                  </FormGroup>
+                                </div>
+                              ))}
+
+                              <Button
+                                variant="link"
+                                icon={<svg fill="currentColor" height="1em" width="1em" viewBox="0 0 512 512"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z" /></svg>}
+                                onClick={() => {
+                                  setOcpRateTagValues([...ocpRateTagValues, { value: '', rate: '', description: '', isDefault: false }]);
+                                }}
+                                style={{ paddingLeft: 0 }}
+                              >
+                                Add more tag values
+                              </Button>
+                            </>
+                          )}
+                        </Form>
+                      </StackItem>
+
+                      <StackItem>
+                        <FormGroup>
+                          <ActionList>
+                            <ActionListItem>
+                              <Button
+                                variant="primary"
+                                isDisabled={!ocpRateMetric || !ocpRateMeasurement}
+                                onClick={() => {
+                                  const newRate = {
+                                    metric: ocpRateMetric,
+                                    description: ocpRateDescription,
+                                    measurement: ocpRateMeasurement,
+                                    calculationType: ocpRateCalculationType,
+                                    tagKey: ocpRateTagKey,
+                                    tagValues: ocpRateTagValues,
+                                  };
+                                  setOcpPriceListRates([...ocpPriceListRates, newRate]);
+                                  setOcpShowCreateRate(false);
+                                  setOcpRateDescription('');
+                                  setOcpRateTagKey('');
+                                  setOcpRateTagValues([{ value: '', rate: '', description: '', isDefault: false }]);
+                                  setOcpRateByTag(false);
+                                }}
+                              >
+                                Create rate
+                              </Button>
+                            </ActionListItem>
+                            <ActionListItem>
+                              <Button variant="link" onClick={() => setOcpShowCreateRate(false)}>
+                                Cancel
+                              </Button>
+                            </ActionListItem>
+                          </ActionList>
+                        </FormGroup>
+                      </StackItem>
+                    </>
+                  )}
+                </Stack>
+              </WizardStep>
+          )}
+
+          {/* Step 3: Cost calculations - only for OCP */}
+          {wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+                name="Cost calculations"
+                id="ocp-cost-calculations-step"
+              >
+                <Stack hasGutter>
+                  <StackItem>
+                    <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
+                      Cost calculations (optional)
+                    </Title>
+                    <a
+                      href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-setting-up-cost-models"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Learn more
+                    </a>
+                  </StackItem>
+
+                  <StackItem>
+                    <Title headingLevel="h3" size="md">Markup or Discount</Title>
+                    <Content>
+                      <p>
+                        Use markup/discount to manipulate how the raw costs are being calculated for your integrations. Note, costs calculated from price list rates will not be affected by this.
+                      </p>
+                    </Content>
+                  </StackItem>
+
+                  <StackItem>
+                    <Flex style={{ marginTop: '6px' }}>
+                      <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Radio
+                          id="markup"
+                          name="discount"
+                          label="Markup (+)"
+                          isChecked={ocpMarkupDiscount === 'markup'}
+                          onChange={() => setOcpMarkupDiscount('markup')}
+                          style={{ marginBottom: '6px' }}
+                        />
+                        <Radio
+                          id="discount"
+                          name="discount"
+                          label="Discount (-)"
+                          isChecked={ocpMarkupDiscount === 'discount'}
+                          onChange={() => setOcpMarkupDiscount('discount')}
+                        />
+                      </FlexItem>
+                      <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Form>
+                          <FormGroup style={{ marginLeft: '20px' }}>
+                            <InputGroup>
+                              <InputGroupItem>
+                                <span style={{ padding: '8px', border: '1px solid var(--pf-t--global--border--color--default)', borderRight: '0' }}>
+                                  {ocpMarkupDiscount === 'markup' ? 'Markup (+)' : 'Discount (-)'}
+                                </span>
+                              </InputGroupItem>
+                              <InputGroupItem isFill>
+                                <TextInput
+                                  id="markup-input-box"
+                                  value={ocpMarkupRate}
+                                  onChange={(_event, val) => setOcpMarkupRate(val)}
+                                  placeholder="0"
+                                  style={{ borderLeft: '0', width: '175px' }}
+                                  aria-label="Rate"
+                                />
+                              </InputGroupItem>
+                              <InputGroupItem>
+                                <span style={{ padding: '8px', border: '1px solid var(--pf-t--global--border--color--default)', borderLeft: '0' }}>
+                                  %
+                                </span>
+                              </InputGroupItem>
+                            </InputGroup>
+                          </FormGroup>
+                        </Form>
+                      </FlexItem>
+                    </Flex>
+                  </StackItem>
+
+                  <StackItem>
+                    <div style={{ marginLeft: '30px' }}>
+                      <Content>
+                        <h3>Examples</h3>
+                      </Content>
+                      <List>
+                        <ListItem>
+                          A markup or discount rate of (+/-) 0% (the default) makes no adjustments to the base costs of your integrations.
+                        </ListItem>
+                        <ListItem>A markup rate of (+) 100% doubles the base costs of your integrations.</ListItem>
+                        <ListItem>A discount rate of (-) 100% reduces the base costs of your integrations to 0.</ListItem>
+                        <ListItem>
+                          A discount rate of (-) 25% reduces the base costs of your integrations to 75% of the original value.
+                        </ListItem>
+                      </List>
+                    </div>
+                  </StackItem>
+                </Stack>
+              </WizardStep>
+          )}
+
+          {/* Step 4: Cost distribution - only for OCP */}
+          {wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+                name="Cost distribution"
+                id="ocp-cost-distribution-step"
+              >
+                <Stack hasGutter>
+                  <StackItem>
+                    <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
+                      Cost distribution
+                    </Title>
+                    <a
+                      href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-using-cost-models#distributing_costs"
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Learn more
+                    </a>
+                  </StackItem>
+
+                  <StackItem>
+                    <Title headingLevel="h3" size="md">Distribution type</Title>
+                    <Content>
+                      <p>Choose how your raw costs are distributed at the project level.</p>
+                    </Content>
+                  </StackItem>
+
+                  <StackItem>
+                    <Form>
+                      <FormGroup>
+                        <Radio
+                          id="cpu-distribution"
+                          name="distribution-type"
+                          label="CPU"
+                          value="cpu"
+                          isChecked={ocpDistributionType === 'cpu'}
+                          onChange={() => setOcpDistributionType('cpu')}
+                        />
+                        <Radio
+                          id="memory-distribution"
+                          name="distribution-type"
+                          label="Memory"
+                          value="memory"
+                          isChecked={ocpDistributionType === 'memory'}
+                          onChange={() => setOcpDistributionType('memory')}
+                          style={{ marginLeft: '16px' }}
+                        />
+                      </FormGroup>
+                    </Form>
+                  </StackItem>
+
+                  <StackItem>
+                    <Title headingLevel="h3" size="md">
+                      Distribute these costs to projects, based on the above description type
+                    </Title>
+                  </StackItem>
+
+                  <StackItem>
+                    <Form>
+                      <FormGroup>
+                        <Checkbox
+                          id="distribute-platform"
+                          label="Platform overhead (OpenShift services)"
+                          isChecked={ocpDistributePlatform}
+                          onChange={(_event, checked) => setOcpDistributePlatform(checked)}
+                          aria-label="Platform overhead (OpenShift services)"
+                        />
+                        <Checkbox
+                          id="distribute-worker"
+                          label="Worker unallocated (unused and non-reserved resources)"
+                          isChecked={ocpDistributeWorker}
+                          onChange={(_event, checked) => setOcpDistributeWorker(checked)}
+                          aria-label="Worker unallocated (unused and non-reserved resources)"
+                        />
+                        <Checkbox
+                          id="distribute-network"
+                          label="Network traffic"
+                          isChecked={ocpDistributeNetwork}
+                          onChange={(_event, checked) => setOcpDistributeNetwork(checked)}
+                          aria-label="Network traffic"
+                        />
+                        <Checkbox
+                          id="distribute-storage"
+                          label="Storage"
+                          isChecked={ocpDistributeStorage}
+                          onChange={(_event, checked) => setOcpDistributeStorage(checked)}
+                          aria-label="Storage"
+                        />
+                      </FormGroup>
+                    </Form>
+                  </StackItem>
+                </Stack>
+              </WizardStep>
+          )}
+
+          {/* Step 5: Assign integrations - only for OCP */}
+          {wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+                name="Assign an integration to the cost model"
+                id="ocp-assign-integrations-step"
+              >
+                <Stack hasGutter>
+                  <StackItem>
+                    <Title headingLevel="h2" size="xl">Assign integrations to the cost model (optional)</Title>
+                  </StackItem>
+
+                  <StackItem>
+                    <Content>
+                      <p>
+                        Select one or more integrations to this cost model. You can skip this step and assign the cost model to a integration at a later time. An integration will be unavailable for selection if a cost model is already assigned to it.
+                      </p>
+                    </Content>
+                  </StackItem>
+
+                  <StackItem>
+                    <Content>
+                      <h3>Select from the following Red Hat OpenShift integrations:</h3>
+                    </Content>
+                  </StackItem>
+
+                  <StackItem>
+                    <Toolbar id="assign-sources-toolbar">
+                      <ToolbarContent>
+                        <ToolbarGroup variant="toggle-group" toggleIcon={<FilterIcon />}>
+                          <ToolbarItem>
+                            <InputGroup id="assign-source-search-input">
+                              <InputGroupItem isFill>
+                                <TextInputGroup>
+                                  <TextInputGroupMain
+                                    icon={<SearchIcon />}
+                                    value={wizardIntegrationSearchValue}
+                                    onChange={(_event, value) => setWizardIntegrationSearchValue(value)}
+                                    placeholder="Filter by name..."
+                                    aria-label="Filter by name..."
+                                  />
+                                </TextInputGroup>
+                              </InputGroupItem>
+                              <InputGroupItem>
+                                <Button variant="control" aria-label="Search">
+                                  <ArrowRightIcon />
+                                </Button>
+                              </InputGroupItem>
+                            </InputGroup>
+                          </ToolbarItem>
+                        </ToolbarGroup>
+                        <ToolbarItem variant="pagination">
+                          <Pagination
+                            itemCount={ocpIntegrations.length}
+                            perPage={10}
+                            page={1}
+                            variant={PaginationVariant.top}
+                            titles={{
+                              paginationAriaLabel: 'Assign integrations bottom pagination',
+                            }}
+                          />
+                        </ToolbarItem>
+                      </ToolbarContent>
+                    </Toolbar>
+
+                    <Table aria-label="Assign integrations to cost model table">
+                      <Thead>
+                        <Tr>
+                          <Th></Th>
+                          <Th>Name</Th>
+                          <Th>Operator version</Th>
+                          <Th style={{ minWidth: '125px' }}>Cost model assigned</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {ocpIntegrations.slice(0, 10).map((integration) => (
+                          <Tr key={integration.id}>
+                            <Td
+                              select={{
+                                onSelect: (_event, isSelecting) => {
+                                  setWizardSelectedIntegrations(
+                                    isSelecting
+                                      ? [...wizardSelectedIntegrations, integration.id]
+                                      : wizardSelectedIntegrations.filter((id) => id !== integration.id)
+                                  );
+                                },
+                                isSelected: wizardSelectedIntegrations.includes(integration.id),
+                                isDisabled: integration.assignedCostModel !== '',
+                              }}
+                            />
+                            <Td>{integration.name}</Td>
+                            <Td>
+                              <Label color={integration.operatorVersion === 'Up to date' ? 'green' : 'blue'} isCompact>
+                                {integration.operatorVersion}
+                              </Label>
+                            </Td>
+                            <Td>{integration.assignedCostModel}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+
+                    <Toolbar>
+                      <ToolbarContent>
+                        <ToolbarItem variant="pagination">
+                          <Pagination
+                            itemCount={ocpIntegrations.length}
+                            perPage={10}
+                            page={1}
+                            variant={PaginationVariant.bottom}
+                            titles={{
+                              paginationAriaLabel: 'Integrations bottom pagination',
+                            }}
+                            style={{ paddingTop: '0.5rem' }}
+                          />
+                        </ToolbarItem>
+                      </ToolbarContent>
+                    </Toolbar>
+                  </StackItem>
+                </Stack>
+              </WizardStep>
+          )}
+
+          {/* Step 6: Review details - only for OCP */}
+          {wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+                name="Review details"
+                id="ocp-review-step"
+              >
+                <Stack hasGutter>
+                  <StackItem>
+                    <Title headingLevel="h2" size="xl">Review details</Title>
+                  </StackItem>
+
+                  <StackItem>
+                    <Content>
+                      <p>
+                        Review and confirm your cost model configuration and assignments. Click <strong>Create</strong> to create the cost model, or <strong>Back</strong> to revise.
+                      </p>
+                    </Content>
+                  </StackItem>
+
+                  <StackItem>
+                    <Content>
+                      <dl>
+                        <dt>Name</dt>
+                        <dd>{wizardName}</dd>
+                        <dt>Description</dt>
+                        <dd>{wizardDescription || ''}</dd>
+                        <dt>Currency</dt>
+                        <dd>{wizardCurrency}</dd>
+                        <dt>Price list</dt>
+                        <dd>
+                          {ocpPriceListRates.length > 0 && (
+                            <Table aria-label="Price list rates table" variant="compact">
+                              <Thead>
+                                <Tr>
+                                  <Th>Metric</Th>
+                                  <Th>Description</Th>
+                                  <Th>Measurement</Th>
+                                  <Th>Calculation type</Th>
+                                  <Th>Rate</Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody>
+                                {ocpPriceListRates.map((rate, index) => (
+                                  <React.Fragment key={index}>
+                                    <Tr>
+                                      <Td>{rate.metric}</Td>
+                                      <Td>{rate.description}</Td>
+                                      <Td>{rate.measurement}</Td>
+                                      <Td>{rate.calculationType}</Td>
+                                      <Td>
+                                        <Button
+                                          variant="link"
+                                          onClick={() => {
+                                            const newExpanded = new Set(ocpExpandedRates);
+                                            if (ocpExpandedRates.has(index)) {
+                                              newExpanded.delete(index);
+                                            } else {
+                                              newExpanded.add(index);
+                                            }
+                                            setOcpExpandedRates(newExpanded);
+                                          }}
+                                        >
+                                          Various
+                                        </Button>
+                                      </Td>
+                                    </Tr>
+                                    {ocpExpandedRates.has(index) && (
+                                      <Tr isExpanded>
+                                        <Td colSpan={6}>
+                                          <Table variant="compact" borders={false}>
+                                            <Thead>
+                                              <Tr>
+                                                <Th>Tag key</Th>
+                                                <Th>Tag value</Th>
+                                                <Th>Rate</Th>
+                                                <Th>Description</Th>
+                                                <Th>Default</Th>
+                                              </Tr>
+                                            </Thead>
+                                            <Tbody>
+                                              {rate.tagValues.map((tv: any, tvIndex: number) => (
+                                                <Tr key={tvIndex}>
+                                                  <Td>{rate.tagKey}</Td>
+                                                  <Td>{tv.value}</Td>
+                                                  <Td>${tv.rate}</Td>
+                                                  <Td>{tv.description}</Td>
+                                                  <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                                </Tr>
+                                              ))}
+                                            </Tbody>
+                                          </Table>
+                                        </Td>
+                                      </Tr>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </Tbody>
+                            </Table>
+                          )}
+                        </dd>
+                        <dt>Markup/Discount</dt>
+                        <dd>{ocpMarkupDiscount === 'markup' ? '+' : '-'}{ocpMarkupRate} %</dd>
+                        <dt>Cost distribution</dt>
+                        <dd>Distribute costs based on {ocpDistributionType === 'cpu' ? 'CPU' : 'Memory'} usage</dd>
+                        {ocpDistributePlatform && <dd>Distribute platform costs</dd>}
+                        {ocpDistributeWorker && <dd>Distribute worker unallocated capacity</dd>}
+                        {ocpDistributeNetwork && <dd>Distribute network costs</dd>}
+                        {ocpDistributeStorage && <dd>Distribute storage costs</dd>}
+                        <dt>Assign integrations</dt>
+                        <dd>
+                          {wizardSelectedIntegrations.length > 0
+                            ? wizardSelectedIntegrations
+                                .map((id) => ocpIntegrations.find((i) => i.id === id)?.name)
+                                .filter(Boolean)
+                                .join(', ')
+                            : ''}
+                        </dd>
+                      </dl>
+                    </Content>
+                  </StackItem>
+                </Stack>
+              </WizardStep>
           )}
         </Wizard>
       </Modal>

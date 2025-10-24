@@ -49,6 +49,9 @@ const ClusterDetail: React.FunctionComponent = () => {
   const cluster = dataService.getClusterById(clusterId || '');
   const clusterProjects = dataService.getProjectsByClusterId(clusterId || '');
   const clusterNodes = dataService.getNodesByClusterId(clusterId || '');
+  
+  // Get cost model if assigned
+  const costModel = cluster?.costModelId ? dataService.getCostModelById(cluster.costModelId) : null;
 
   // If cluster not found, show error
   if (!cluster) {
@@ -429,7 +432,7 @@ const ClusterDetail: React.FunctionComponent = () => {
           <h3>Cost management operator version</h3>
           <List isPlain>
             <ListItem>
-              <span style={{ marginRight: '1rem' }}>costmanagement-metrics-operator:4.1.0</span>
+              <span style={{ marginRight: '1rem' }}>{cluster.operatorVersion}</span>
               <Label color="green" icon={<CheckCircleIcon />}>Up to date</Label>
             </ListItem>
           </List>
@@ -438,25 +441,29 @@ const ClusterDetail: React.FunctionComponent = () => {
           <List isPlain>
             <ListItem>
               <span style={{ marginRight: '1rem' }}>OpenShift source:</span>
-              <a href="/settings/integrations/detail/206487">{clusterData.name}</a>
+              <a href={`/settings/integrations/detail/${cluster.integrationId}`}>{clusterData.name}</a>
             </ListItem>
             <ListItem>
               <span style={{ marginRight: '1rem' }}>Cost model:</span>
-              <a href="/openshift/cost-management/settings/cost-model/d4bb1e96-282b-480a-adbf-bba46abf1d58">Cost Model</a>
+              {costModel ? (
+                <a href={`/openshift/cost-management/settings/cost-model/${costModel.id}`}>{costModel.name}</a>
+              ) : (
+                <span style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>No cost model assigned</span>
+              )}
             </ListItem>
           </List>
 
-          <h3>Cloud integration</h3>
-          <List isPlain>
-            <ListItem>
-              <span style={{ marginRight: '1rem' }}>Amazon Web Services source:</span>
-              <a href="/settings/integrations/detail/210794">AWS Costlab</a>
-            </ListItem>
-            <ListItem>
-              <span style={{ marginRight: '1rem' }}>Cost model:</span>
-              <a href="/openshift/cost-management/settings/cost-model/66b2dc50-0769-498f-839c-ad81cbff725e">test-dla</a>
-            </ListItem>
-          </List>
+          {cluster.awsIntegrationId && (
+            <>
+              <h3>Cloud integration</h3>
+              <List isPlain>
+                <ListItem>
+                  <span style={{ marginRight: '1rem' }}>Amazon Web Services source:</span>
+                  <a href={`/settings/integrations/detail/${cluster.awsIntegrationId}`}>AWS Integration</a>
+                </ListItem>
+              </List>
+            </>
+          )}
 
           <h3>Nodes</h3>
           <List isPlain>
