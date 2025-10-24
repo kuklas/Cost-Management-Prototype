@@ -55,6 +55,7 @@ export interface Node {
   cpuCapacity: number;
   memoryCapacityGiB: number;
   monthOverMonthChange: number;
+  architecture: string;
 }
 
 export interface AWSAccount {
@@ -238,10 +239,6 @@ class DataService {
 
   getClusterById(clusterId: string): Cluster | undefined {
     return this.data.openshift.clusters.find(c => c.id === clusterId);
-  }
-
-  getNodeById(nodeId: string): Node | undefined {
-    return this.data.openshift.nodes.find(n => n.id === nodeId);
   }
 
   getOpenShiftTotalCost(): number {

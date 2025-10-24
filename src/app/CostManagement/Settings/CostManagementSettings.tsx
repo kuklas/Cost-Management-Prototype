@@ -2059,7 +2059,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                 );
                               },
                               isSelected: wizardSelectedIntegrations.includes(integration.id),
-                              disable: integration.assignedCostModel !== '',
+                              isDisabled: integration.assignedCostModel !== '',
                             }}
                           />
                           <Td dataLabel="Name">{integration.name}</Td>
