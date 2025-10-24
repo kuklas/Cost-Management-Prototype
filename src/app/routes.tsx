@@ -4,8 +4,10 @@ import { OpenShift } from '@app/OpenShift/OpenShift';
 import { Overview } from '@app/CostManagement/Overview/Overview';
 import { Optimizations } from '@app/CostManagement/Optimizations/Optimizations';
 import { CostManagementOpenShift } from '@app/CostManagement/OpenShift/CostManagementOpenShift';
+import { ClusterDetail } from '@app/CostManagement/OpenShift/ClusterDetail/ClusterDetail';
 import { AWS } from '@app/CostManagement/AWS/AWS';
 import { GCP } from '@app/CostManagement/GCP/GCP';
+import { GCPAccountDetails } from '@app/CostManagement/GCP/GCPAccountDetails';
 import { Azure } from '@app/CostManagement/Azure/Azure';
 import { CostExplorer } from '@app/CostManagement/CostExplorer/CostExplorer';
 import { CostManagementSettings } from '@app/CostManagement/Settings/CostManagementSettings';
@@ -60,6 +62,12 @@ const routes: AppRouteConfig[] = [
         title: 'Cost Management | OpenShift',
       },
       {
+        element: <ClusterDetail />,
+        exact: true,
+        path: '/cost-management/openshift/cluster/:clusterId',
+        title: 'Cost Management | Cluster Details',
+      },
+      {
         element: <AWS />,
         exact: true,
         label: 'Amazon Web Services',
@@ -72,6 +80,12 @@ const routes: AppRouteConfig[] = [
         label: 'Google Cloud',
         path: '/cost-management/gcp',
         title: 'Cost Management | Google Cloud',
+      },
+      {
+        element: <GCPAccountDetails />,
+        exact: true,
+        path: '/cost-management/gcp/account-details',
+        title: 'Cost Management | Google Cloud Account Details',
       },
       {
         element: <Azure />,

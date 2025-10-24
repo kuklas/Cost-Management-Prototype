@@ -36,6 +36,7 @@ import {
   SortAmountUpIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
+import { dataService } from '@app/data/dataService';
 
 interface ProjectItem {
   id: string;
@@ -85,8 +86,31 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
   const [tagKeyOpen, setTagKeyOpen] = React.useState(false);
   const [tagKey, setTagKey] = React.useState('');
 
-  // Mock data
-  const projects: ProjectItem[] = [
+  // Get data from database
+  const dbProjects = dataService.getAllProjects();
+  const dbClusters = dataService.getAllClusters();
+  const dbNodes = dataService.getAllNodes();
+  const totalOpenShiftCost = dataService.getOpenShiftTotalCost();
+
+  // Transform projects data for the UI
+  const projects: ProjectItem[] = dbProjects.map(proj => {
+    const percentage = (proj.cost / totalOpenShiftCost) * 100;
+    const prevCost = proj.cost / (1 + 0.03); // Approximate previous cost
+    
+    return {
+      id: proj.id,
+      name: proj.name,
+      includesOverhead: proj.name.includes('unallocated') || proj.name.includes('openshift'),
+      optimizations: Math.floor(Math.random() * 8), // Random for demo
+      momChange: ((proj.cost - prevCost) / prevCost) * 100,
+      momPrevCost: dataService.formatCurrency(prevCost),
+      cost: dataService.formatCurrency(proj.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
+
+  // Keep the original hardcoded projects for now (commented out below)
+  /* const projects: ProjectItem[] = [
     {
       id: 'netobserv',
       name: 'netobserv',
@@ -187,9 +211,26 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
       cost: '$2,399.55',
       costPercent: '2.79',
     },
-  ];
+  ]; */
 
-  const clusters: ClusterItem[] = [
+  // Transform clusters data for the UI
+  const clusters: ClusterItem[] = dbClusters.map(cluster => {
+    const percentage = (cluster.cost / totalOpenShiftCost) * 100;
+    const prevCost = cluster.cost / (1 + (cluster.monthOverMonthChange / 100));
+    
+    return {
+      id: cluster.id,
+      name: cluster.displayName,
+      clusterId: cluster.id,
+      momChange: cluster.monthOverMonthChange,
+      momPrevCost: dataService.formatCurrency(prevCost),
+      cost: dataService.formatCurrency(cluster.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
+
+  // Keep the original hardcoded clusters for now (commented out below)
+  /* const clusters: ClusterItem[] = [
     {
       id: '023d9b0e-7ca6-481d-b04f-ea606becd54e',
       name: 'demolab',
@@ -235,92 +276,26 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
       cost: '$42.33',
       costPercent: '0.05',
     },
-  ];
+  ]; */
 
-  const nodes: NodeItem[] = [
-    {
-      id: 'ip-10-0-134-89.us-east-2.compute.internal',
-      name: 'ip-10-0-134-89.us-east-2.compute.internal',
-      momChange: null,
-      momPrevCost: '',
-      cost: '$9,283.46',
-      costPercent: '10.80',
-    },
-    {
-      id: 'ip-10-0-154-218.us-east-2.compute.internal',
-      name: 'ip-10-0-154-218.us-east-2.compute.internal',
-      momChange: null,
-      momPrevCost: '',
-      cost: '$7,577.09',
-      costPercent: '8.82',
-    },
-    {
-      id: 'gcp_compute2',
-      name: 'gcp_compute2',
-      momChange: -4.99,
-      momPrevCost: '$6,533.93',
-      cost: '$6,208.12',
-      costPercent: '7.22',
-    },
-    {
-      id: 'aws_compute_1',
-      name: 'aws_compute_1',
-      momChange: -23.88,
-      momPrevCost: '$6,053.39',
-      cost: '$4,607.55',
-      costPercent: '5.36',
-    },
-    {
-      id: 'gcp_compute1',
-      name: 'gcp_compute1',
-      momChange: -4.42,
-      momPrevCost: '$4,603.60',
-      cost: '$4,399.90',
-      costPercent: '5.12',
-    },
-    {
-      id: 'ip-10-0-140-237.us-east-2.compute.internal',
-      name: 'ip-10-0-140-237.us-east-2.compute.internal',
-      momChange: null,
-      momPrevCost: '',
-      cost: '$4,366.77',
-      costPercent: '5.08',
-    },
-    {
-      id: 'gcp_master_2',
-      name: 'gcp_master_2',
-      momChange: -4.12,
-      momPrevCost: '$3,951.53',
-      cost: '$3,788.92',
-      costPercent: '4.41',
-    },
-    {
-      id: 'gcp_compute4',
-      name: 'gcp_compute4',
-      momChange: -4.12,
-      momPrevCost: '$3,951.53',
-      cost: '$3,788.92',
-      costPercent: '4.41',
-    },
-    {
-      id: 'ip-10-0-146-132.us-east-2.compute.internal',
-      name: 'ip-10-0-146-132.us-east-2.compute.internal',
-      momChange: null,
-      momPrevCost: '',
-      cost: '$2,574.34',
-      costPercent: '3.00',
-    },
-    {
-      id: 'ip-10-0-139-88.us-east-2.compute.internal',
-      name: 'ip-10-0-139-88.us-east-2.compute.internal',
-      momChange: null,
-      momPrevCost: '',
-      cost: '$2,244.14',
-      costPercent: '2.61',
-    },
-  ];
+  // Transform nodes data for the UI
+  const nodes: NodeItem[] = dbNodes.map(node => {
+    const percentage = (node.cost / totalOpenShiftCost) * 100;
+    const prevCost = node.monthOverMonthChange !== 0 
+      ? node.cost / (1 + (node.monthOverMonthChange / 100))
+      : 0;
+    
+    return {
+      id: node.id,
+      name: node.name,
+      momChange: node.monthOverMonthChange !== 0 ? node.monthOverMonthChange : null,
+      momPrevCost: prevCost > 0 ? dataService.formatCurrency(prevCost) : '',
+      cost: dataService.formatCurrency(node.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
 
-  const totalItems = groupBy === 'Project' ? 107 : groupBy === 'Cluster' ? 5 : 1596;
+  const totalItems = groupBy === 'Project' ? projects.length : groupBy === 'Cluster' ? clusters.length : nodes.length;
 
   const getSortParams = (columnIndex: number): ThProps['sort'] => ({
     sortBy: {
@@ -396,24 +371,25 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
             </FlexItem>
           </Flex>
 
-          {/* Controls and Status Row */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
+          {/* Integration Status and Total Cost Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                {/* Integration Status */}
-                <FlexItem>
-                  <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
-                  <span style={{ marginRight: '0.5rem' }}>5</span>
-                  <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <span style={{ marginRight: '0.5rem' }}>7</span>
-                  <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--status--warning--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
-                    View all
-                  </Button>
-                </FlexItem>
-              </Flex>
+              <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
+              <span style={{ marginRight: '0.5rem' }}>5</span>
+              <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <span style={{ marginRight: '0.5rem' }}>7</span>
+              <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--status--warning--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
+                View all
+              </Button>
             </FlexItem>
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>$87,851.85</Title>
+            </FlexItem>
+          </Flex>
 
+          {/* Controls and Date Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {/* Group by */}
@@ -532,17 +508,8 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                 </Select>
               </Flex>
             </FlexItem>
-          </Flex>
-
-          {/* Total Cost Display */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
-            <FlexItem>
-              <Title headingLevel="h2" size="4xl" style={{ marginTop: 'var(--pf-t--global--spacer--lg)', marginBottom: 0 }}>
-                $85,930.55
-              </Title>
-            </FlexItem>
-            <FlexItem style={{ textAlign: 'end' }}>
-              October 1 – 23
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              October 1 – 24
             </FlexItem>
           </Flex>
         </Flex>
@@ -756,7 +723,7 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                       }}
                     />
                     <Td dataLabel="Cluster names" modifier="nowrap">
-                      <Link to={`/openshift/cost-management/ocp/breakdown?breakdown_desc=${cluster.clusterId}&breakdown_title=${cluster.name}&group_by[cluster]=${cluster.clusterId}&id=${cluster.clusterId}`}>
+                      <Link to={`/cost-management/openshift/cluster/${cluster.clusterId}`}>
                         {cluster.name}
                       </Link>
                       <div style={{ color: 'rgb(56, 56, 56)', fontSize: '0.75rem' }}>

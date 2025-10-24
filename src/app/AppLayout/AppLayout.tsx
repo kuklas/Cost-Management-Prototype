@@ -15,9 +15,11 @@ import {
   PageSidebar,
   PageSidebarBody,
   SkipToContent,
+  Label,
 } from '@patternfly/react-core';
 import { IAppRoute, IAppRouteGroup, routes } from '@app/routes';
 import { BarsIcon } from '@patternfly/react-icons';
+import kokuLogo from '@app/bgimages/koku-logo.png';
 
 interface IAppLayout {
   children: React.ReactNode;
@@ -37,20 +39,21 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
           />
         </MastheadToggle>
         <MastheadBrand data-codemods>
-          <MastheadLogo data-codemods component="div">
-            <svg height="40px" viewBox="0 0 200 40" style={{ marginRight: '12px' }}>
-              <title>Red Hat logo</title>
-              <g fill="#EE0000">
-                <path d="M32.5 19c0-1.3-.2-2.5-.5-3.7-1.6-5.6-6.8-9.7-12.9-9.7-4.6 0-8.7 2.3-11.1 5.9l-2.7-2.7C7.7 5.2 12.2 2.8 17.1 2.8c8.9 0 16.2 7.2 16.2 16.2 0 1.3-.2 2.5-.5 3.7h-.3zM5.3 19c0 6.5 5.3 11.8 11.8 11.8 4.6 0 8.7-2.7 10.6-6.5l2.9 2.9c-2.6 4.6-7.5 7.6-13.5 7.6-8.4 0-15.3-6.8-15.3-15.3 0-1.3.2-2.5.5-3.7h3c-.1.7-.2 1.5-.2 2.2z"/>
-              </g>
-            </svg>
+          <MastheadLogo data-codemods component="div" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img 
+              src={kokuLogo} 
+              alt="Koku Logo" 
+              style={{ height: '40px', marginRight: '12px' }} 
+            />
             <span style={{ 
               fontSize: '18px', 
               fontWeight: 500,
-              color: 'var(--pf-t--global--text--color--regular)'
+              color: 'var(--pf-t--global--text--color--regular)',
+              whiteSpace: 'nowrap'
             }}>
               Cost Management
             </span>
+            <Label color="blue" isCompact>work in progress prototype</Label>
           </MastheadLogo>
         </MastheadBrand>
       </MastheadMain>

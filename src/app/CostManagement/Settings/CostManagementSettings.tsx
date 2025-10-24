@@ -45,6 +45,10 @@ import {
   ActionListGroup,
   Stack,
   StackItem,
+  Content,
+  Radio,
+  List,
+  ListItem,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import {
@@ -53,6 +57,7 @@ import {
   ArrowRightIcon,
   MinusCircleIcon,
   EllipsisVIcon,
+  TimesIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
@@ -144,6 +149,18 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [wizardIntegration, setWizardIntegration] = React.useState('');
   const [wizardCurrencyOpen, setWizardCurrencyOpen] = React.useState(false);
   const [wizardCurrency, setWizardCurrency] = React.useState('USD ($) - United States Dollar');
+  const [wizardIsDiscount, setWizardIsDiscount] = React.useState(false);
+  const [wizardMarkupRate, setWizardMarkupRate] = React.useState('0');
+  const [wizardSelectedIntegrations, setWizardSelectedIntegrations] = React.useState<string[]>([]);
+  const [wizardIntegrationSearchValue, setWizardIntegrationSearchValue] = React.useState('');
+
+  // Mock AWS integrations data
+  const awsIntegrations = [
+    { id: 'aws-costlab', name: 'AWS Costlab', assignedCostModel: 'test-dla' },
+    { id: 'aws-customer-filtered', name: 'AWS-Customer-Filtered-Data-Demo', assignedCostModel: 'simple' },
+    { id: 'aws-dev-nise', name: 'AWS - Dev Nise populator', assignedCostModel: '' },
+    { id: 'aws-redhat', name: 'AWS Red Hat Cost Management', assignedCostModel: 'AWS markup' },
+  ];
 
   // Mock data
   const costModels: CostModel[] = [
@@ -1344,23 +1361,16 @@ const CostManagementSettings: React.FunctionComponent = () => {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         hasNoBodyWrapper
-        aria-label="Create cost model wizard"
+        aria-labelledby="create-cost-model-wizard-title"
       >
         <Wizard
           title="Create a cost model"
           description="A cost model allows you to associate a price to metrics provided by your integrations to charge for utilization of resources."
           onClose={() => setIsWizardOpen(false)}
-          onSave={() => {
-            // Handle save
-            setIsWizardOpen(false);
-          }}
         >
           <WizardStep
             name="Enter information"
             id="general-info-step"
-            footer={{
-              isNextDisabled: !wizardName || !wizardIntegration,
-            }}
           >
             <Stack hasGutter>
               <StackItem>
@@ -1459,6 +1469,281 @@ const CostManagementSettings: React.FunctionComponent = () => {
               </StackItem>
             </Stack>
           </WizardStep>
+
+          {/* Step 2: Cost calculations - only for AWS/Azure/GCP */}
+          {wizardIntegration === 'Amazon Web Services' && (
+            <WizardStep
+              name="Cost calculations"
+              id="cost-calculations-step"
+            >
+              <Stack hasGutter>
+                <StackItem>
+                  <Title headingLevel="h2" size="xl" style={{ display: 'inline-block', marginRight: '1em' }}>
+                    Cost calculations (optional)
+                  </Title>
+                  <a
+                    href="https://docs.redhat.com/en/documentation/cost_management_service/1-latest/html/using_cost_models/assembly-setting-up-cost-models#creating-an-AWS-Azure-cost-model_setting-up-cost-models"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Learn more
+                  </a>
+                </StackItem>
+
+                <StackItem>
+                  <Title headingLevel="h3" size="md">Markup or Discount</Title>
+                  <Content>
+                    <p>
+                      Use markup/discount to manipulate how the raw costs are being calculated for your integrations. Note, costs calculated from price list rates will not be affected by this.
+                    </p>
+                  </Content>
+                </StackItem>
+
+                <StackItem>
+                  <Flex style={{ marginTop: '6px' }}>
+                    <Flex direction={{ default: 'column' }} alignSelf={{ default: 'alignSelfCenter' }}>
+                      <div>
+                        <Radio
+                          name="discount"
+                          id="markup"
+                          isChecked={!wizardIsDiscount}
+                          onChange={() => setWizardIsDiscount(false)}
+                          label="Markup (+)"
+                          style={{ marginBottom: '6px' }}
+                        />
+                        <Radio
+                          name="discount"
+                          id="discount"
+                          isChecked={wizardIsDiscount}
+                          onChange={() => setWizardIsDiscount(true)}
+                          label="Discount (-)"
+                        />
+                      </div>
+                    </Flex>
+
+                    <Flex direction={{ default: 'column' }} alignSelf={{ default: 'alignSelfCenter' }}>
+                      <Form style={{ marginLeft: '20px' }}>
+                        <FormGroup>
+                          <InputGroup>
+                            <InputGroupItem isFill={false}>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '0 var(--pf-t--global--spacer--sm)',
+                                  border: '1px solid var(--pf-t--global--border--color--default)',
+                                  borderRight: '0',
+                                  backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
+                                  alignItems: 'center',
+                                  height: '36px',
+                                  lineHeight: '34px',
+                                }}
+                              >
+                                {wizardIsDiscount ? 'Discount (-)' : 'Markup (+)'}
+                              </span>
+                            </InputGroupItem>
+                            <InputGroupItem isFill>
+                              <TextInput
+                                type="text"
+                                id="markup-input-box"
+                                aria-label="Rate"
+                                value={wizardMarkupRate}
+                                onChange={(_event, value) => setWizardMarkupRate(value)}
+                                placeholder="0"
+                                style={{ borderLeft: '0', width: '175px' }}
+                              />
+                            </InputGroupItem>
+                            <InputGroupItem isFill={false}>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '0 var(--pf-t--global--spacer--sm)',
+                                  border: '1px solid var(--pf-t--global--border--color--default)',
+                                  borderLeft: '0',
+                                  backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
+                                  alignItems: 'center',
+                                  height: '36px',
+                                  lineHeight: '34px',
+                                }}
+                              >
+                                %
+                              </span>
+                            </InputGroupItem>
+                          </InputGroup>
+                        </FormGroup>
+                      </Form>
+                    </Flex>
+                  </Flex>
+                </StackItem>
+
+                <StackItem style={{ marginLeft: '30px' }}>
+                  <Content>
+                    <h3>Examples</h3>
+                  </Content>
+                  <List>
+                    <ListItem>
+                      <span>A markup or discount rate of (+/-) 0% (the default) makes no adjustments to the base costs of your integrations.</span>
+                    </ListItem>
+                    <ListItem>
+                      <span>A markup rate of (+) 100% doubles the base costs of your integrations.</span>
+                    </ListItem>
+                    <ListItem>
+                      <span>A discount rate of (-) 100% reduces the base costs of your integrations to 0.</span>
+                    </ListItem>
+                    <ListItem>
+                      <span>A discount rate of (-) 25% reduces the base costs of your integrations to 75% of the original value.</span>
+                    </ListItem>
+                  </List>
+                </StackItem>
+              </Stack>
+            </WizardStep>
+          )}
+
+          {/* Step 3: Assign integrations - only for AWS/Azure/GCP */}
+          {wizardIntegration === 'Amazon Web Services' && (
+            <WizardStep
+              name="Assign an integration to the cost model"
+              id="assign-integrations-step"
+            >
+              <Stack hasGutter>
+                <StackItem>
+                  <Title headingLevel="h2" size="xl">Assign integrations to the cost model (optional)</Title>
+                </StackItem>
+
+                <StackItem>
+                  <Content>
+                    <p>
+                      Select one or more integrations to this cost model. You can skip this step and assign the cost model to a integration at a later time. An integration will be unavailable for selection if a cost model is already assigned to it.
+                    </p>
+                  </Content>
+                </StackItem>
+
+                <StackItem>
+                  <Content>
+                    <h3>Select from the following Amazon Web Services integrations:</h3>
+                  </Content>
+                </StackItem>
+
+                <StackItem>
+                  <Toolbar id="assign-sources-toolbar">
+                    <ToolbarContent>
+                      <ToolbarToggleGroup toggleIcon={<FilterIcon />} breakpoint="xl">
+                        <ToolbarItem>
+                          <SearchInput
+                            placeholder="Filter by name..."
+                            value={wizardIntegrationSearchValue}
+                            onChange={(_event, value) => setWizardIntegrationSearchValue(value)}
+                            onClear={() => setWizardIntegrationSearchValue('')}
+                          />
+                        </ToolbarItem>
+                      </ToolbarToggleGroup>
+                      <ToolbarItem variant="pagination">
+                        <Pagination
+                          itemCount={awsIntegrations.length}
+                          perPage={10}
+                          page={1}
+                          widgetId="assign-integrations-pagination-top"
+                          isCompact
+                        />
+                      </ToolbarItem>
+                    </ToolbarContent>
+                  </Toolbar>
+
+                  <Table aria-label="Assign integrations to cost model table" variant="compact" gridBreakPoint="grid-md">
+                    <Thead>
+                      <Tr>
+                        <Th />
+                        <Th>Name</Th>
+                        <Th>Cost model assigned</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {awsIntegrations.map((integration) => (
+                        <Tr key={integration.id}>
+                          <Td
+                            select={{
+                              rowIndex: 0,
+                              onSelect: (_event, isSelecting) => {
+                                setWizardSelectedIntegrations(
+                                  isSelecting
+                                    ? [...wizardSelectedIntegrations, integration.id]
+                                    : wizardSelectedIntegrations.filter((id) => id !== integration.id)
+                                );
+                              },
+                              isSelected: wizardSelectedIntegrations.includes(integration.id),
+                              disable: integration.assignedCostModel !== '',
+                            }}
+                          />
+                          <Td dataLabel="Name">{integration.name}</Td>
+                          <Td dataLabel="Cost model assigned">{integration.assignedCostModel}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+
+                  <Toolbar>
+                    <ToolbarContent>
+                      <ToolbarItem variant="pagination">
+                        <Pagination
+                          itemCount={awsIntegrations.length}
+                          perPage={10}
+                          page={1}
+                          widgetId="assign-integrations-pagination-bottom"
+                          variant={PaginationVariant.bottom}
+                          style={{ paddingTop: '0.5rem' }}
+                        />
+                      </ToolbarItem>
+                    </ToolbarContent>
+                  </Toolbar>
+                </StackItem>
+              </Stack>
+            </WizardStep>
+          )}
+
+          {/* Step 4: Review details - only for AWS/Azure/GCP */}
+          {wizardIntegration === 'Amazon Web Services' && (
+            <WizardStep
+              name="Review details"
+              id="review-step"
+            >
+              <Stack hasGutter>
+                <StackItem>
+                  <Title headingLevel="h2" size="xl">Review details</Title>
+                </StackItem>
+
+                <StackItem>
+                  <Content>
+                    <p>
+                      Review and confirm your cost model configuration and assignments. Click <strong>Create</strong> to create the cost model, or <strong>Back</strong> to revise.
+                    </p>
+                  </Content>
+                </StackItem>
+
+                <StackItem>
+                  <Content>
+                    <dl>
+                      <dt>Name</dt>
+                      <dd>{wizardName}</dd>
+                      <dt>Description</dt>
+                      <dd>{wizardDescription || ''}</dd>
+                      <dt>Currency</dt>
+                      <dd>{wizardCurrency}</dd>
+                      <dt>Markup/Discount</dt>
+                      <dd>{wizardIsDiscount ? '-' : '+'}{wizardMarkupRate} %</dd>
+                      <dt>Assign integrations</dt>
+                      <dd>
+                        {wizardSelectedIntegrations.length > 0
+                          ? wizardSelectedIntegrations
+                              .map((id) => awsIntegrations.find((i) => i.id === id)?.name)
+                              .filter(Boolean)
+                              .join(', ')
+                          : ''}
+                      </dd>
+                    </dl>
+                  </Content>
+                </StackItem>
+              </Stack>
+            </WizardStep>
+          )}
         </Wizard>
       </Modal>
     </>

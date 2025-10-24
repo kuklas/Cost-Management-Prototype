@@ -33,6 +33,7 @@ import {
   SortAmountDownIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
+import { dataService } from '@app/data/dataService';
 
 interface AccountItem {
   id: string;
@@ -46,6 +47,7 @@ interface AccountItem {
 const GCP: React.FunctionComponent = () => {
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
   const [groupByOpen, setGroupByOpen] = React.useState(false);
+  const [groupBy, setGroupBy] = React.useState('Account');
   const [dateRangeOpen, setDateRangeOpen] = React.useState(false);
   const [categoryOpen, setCategoryOpen] = React.useState(false);
   const [operatorOpen, setOperatorOpen] = React.useState(false);
@@ -56,19 +58,26 @@ const GCP: React.FunctionComponent = () => {
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [selectAll, setSelectAll] = React.useState(false);
 
-  // Mock data
-  const accounts: AccountItem[] = [
-    {
-      id: 'example_2_id',
-      name: 'example_2_id',
-      momChange: -6.32,
-      momPrevCost: '$7,007.43',
-      cost: '$6,564.76',
-      costPercent: '100.00',
-    },
-  ];
+  // Get data from database
+  const dbAccounts = dataService.getGCPAccounts();
+  const totalGCPCost = dataService.getGCPTotalCost();
 
-  const totalItems = 1;
+  // Transform accounts data for the UI
+  const accounts: AccountItem[] = dbAccounts.map(account => {
+    const percentage = (account.cost / totalGCPCost) * 100;
+    const prevCost = account.cost / (1 + (account.monthOverMonthChange / 100));
+    
+    return {
+      id: account.billingAccountId,
+      name: account.displayName,
+      momChange: account.monthOverMonthChange,
+      momPrevCost: dataService.formatCurrency(prevCost),
+      cost: dataService.formatCurrency(account.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
+
+  const totalItems = accounts.length;
 
   const getSortParams = (columnIndex: number): ThProps['sort'] => ({
     sortBy: {
@@ -144,24 +153,25 @@ const GCP: React.FunctionComponent = () => {
             </FlexItem>
           </Flex>
 
-          {/* Controls and Status Row */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
+          {/* Integration Status and Total Cost Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                {/* Integration Status */}
-                <FlexItem>
-                  <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
-                  <span style={{ marginRight: '0.5rem' }}>1</span>
-                  <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <span style={{ marginRight: '0.5rem' }}>1</span>
-                  <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
-                    View all
-                  </Button>
-                </FlexItem>
-              </Flex>
+              <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
+              <span style={{ marginRight: '0.5rem' }}>1</span>
+              <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <span style={{ marginRight: '0.5rem' }}>1</span>
+              <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
+                View all
+              </Button>
             </FlexItem>
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>$6,564.76</Title>
+            </FlexItem>
+          </Flex>
 
+          {/* Controls and Date Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {/* Group by */}
@@ -171,15 +181,19 @@ const GCP: React.FunctionComponent = () => {
                   </Title>
                   <Select
                     isOpen={groupByOpen}
-                    onSelect={() => setGroupByOpen(false)}
+                    onSelect={(_event, value) => {
+                      setGroupBy(value as string);
+                      setGroupByOpen(false);
+                    }}
                     onOpenChange={(isOpen) => setGroupByOpen(isOpen)}
+                    selected={groupBy}
                     toggle={(toggleRef) => (
                       <MenuToggle 
                         ref={toggleRef} 
                         onClick={() => setGroupByOpen(!groupByOpen)} 
                         isExpanded={groupByOpen}
                       >
-                        Account
+                        {groupBy}
                       </MenuToggle>
                     )}
                   >
@@ -215,17 +229,8 @@ const GCP: React.FunctionComponent = () => {
                 </Select>
               </Flex>
             </FlexItem>
-          </Flex>
-
-          {/* Total Cost Display */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
-            <FlexItem>
-              <Title headingLevel="h2" size="4xl" style={{ marginTop: 'var(--pf-t--global--spacer--lg)', marginBottom: 0 }}>
-                $6,564.76
-              </Title>
-            </FlexItem>
-            <FlexItem style={{ textAlign: 'end' }}>
-              October 1 – 23
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              October 1 – 24
             </FlexItem>
           </Flex>
         </Flex>
@@ -356,9 +361,15 @@ const GCP: React.FunctionComponent = () => {
                       }}
                     />
                     <Td dataLabel="Account names" modifier="nowrap">
-                      <Link to={`/cost-management/gcp/breakdown?breakdown_title=${account.name}&group_by[account]=${account.id}&id=${account.id}`}>
-                        {account.name}
-                      </Link>
+                      {groupBy === 'Account' ? (
+                        <Link to="/cost-management/gcp/account-details">
+                          {account.name}
+                        </Link>
+                      ) : (
+                        <Link to={`/cost-management/gcp/breakdown?breakdown_title=${account.name}&group_by[account]=${account.id}&id=${account.id}`}>
+                          {account.name}
+                        </Link>
+                      )}
                     </Td>
                     <Td dataLabel="Month over month change" modifier="nowrap">
                       <div>

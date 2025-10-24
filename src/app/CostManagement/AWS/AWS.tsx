@@ -34,6 +34,7 @@ import {
   SortAmountUpIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
+import { dataService } from '@app/data/dataService';
 
 interface AccountItem {
   id: string;
@@ -59,37 +60,27 @@ const AWS: React.FunctionComponent = () => {
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [selectAll, setSelectAll] = React.useState(false);
 
-  // Mock data
-  const accounts: AccountItem[] = [
-    {
-      id: '673985673683',
-      name: '673985673683',
-      momChange: -18.97,
-      momPrevCost: '$23,925.81',
-      cost: '$19,387.15',
-      costPercent: '93.52',
-    },
-    {
-      id: '597654742839',
-      name: 'soconcar',
-      alias: '597654742839',
-      momChange: 5.16,
-      momPrevCost: '$1,257.08',
-      cost: '$1,321.96',
-      costPercent: '6.38',
-    },
-    {
-      id: '589173575009',
-      name: 'hccm-alias',
-      alias: '589173575009',
-      momChange: -18.51,
-      momPrevCost: '$25.32',
-      cost: '$20.63',
-      costPercent: '0.10',
-    },
-  ];
+  // Get data from database
+  const dbAccounts = dataService.getAWSAccounts();
+  const totalAWSCost = dataService.getAWSTotalCost();
 
-  const totalItems = 3;
+  // Transform accounts data for the UI
+  const accounts: AccountItem[] = dbAccounts.map(account => {
+    const percentage = (account.cost / totalAWSCost) * 100;
+    const prevCost = account.cost / (1 + (account.monthOverMonthChange / 100));
+    
+    return {
+      id: account.accountNumber,
+      name: account.displayName,
+      alias: account.accountNumber,
+      momChange: account.monthOverMonthChange,
+      momPrevCost: dataService.formatCurrency(prevCost),
+      cost: dataService.formatCurrency(account.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
+
+  const totalItems = accounts.length;
 
   const getSortParams = (columnIndex: number): ThProps['sort'] => ({
     sortBy: {
@@ -165,24 +156,25 @@ const AWS: React.FunctionComponent = () => {
             </FlexItem>
           </Flex>
 
-          {/* Controls and Status Row */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
+          {/* Integration Status and Total Cost Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                {/* Integration Status */}
-                <FlexItem>
-                  <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
-                  <span style={{ marginRight: '0.5rem' }}>3</span>
-                  <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <span style={{ marginRight: '0.5rem' }}>1</span>
-                  <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
-                    View all
-                  </Button>
-                </FlexItem>
-              </Flex>
+              <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
+              <span style={{ marginRight: '0.5rem' }}>3</span>
+              <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <span style={{ marginRight: '0.5rem' }}>1</span>
+              <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
+                View all
+              </Button>
             </FlexItem>
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>$20,729.73</Title>
+            </FlexItem>
+          </Flex>
 
+          {/* Controls and Date Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {/* Group by */}
@@ -260,17 +252,8 @@ const AWS: React.FunctionComponent = () => {
                 </Select>
               </Flex>
             </FlexItem>
-          </Flex>
-
-          {/* Total Cost Display */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
-            <FlexItem>
-              <Title headingLevel="h2" size="4xl" style={{ marginTop: 'var(--pf-t--global--spacer--lg)', marginBottom: 0 }}>
-                $20,729.73
-              </Title>
-            </FlexItem>
-            <FlexItem style={{ textAlign: 'end' }}>
-              October 1 – 23
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              October 1 – 24
             </FlexItem>
           </Flex>
         </Flex>

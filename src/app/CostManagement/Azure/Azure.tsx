@@ -34,6 +34,7 @@ import {
   SortAmountUpIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
+import { dataService } from '@app/data/dataService';
 
 interface AccountItem {
   id: string;
@@ -58,38 +59,27 @@ const Azure: React.FunctionComponent = () => {
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [selectAll, setSelectAll] = React.useState(false);
 
-  // Mock data
-  const accounts: AccountItem[] = [
-    {
-      id: '2639de71-ca37-4a17-a104-17665a50e7fc',
-      name: 'Cost Management SaaS Dev/Test',
-      alias: '2639de71-ca37-4a17-a104-17665a50e7fc',
-      momChange: -8.56,
-      momPrevCost: '$62.81',
-      cost: '$57.43',
-      costPercent: '48.34',
-    },
-    {
-      id: '38f1d748-3ac7-4b7f-a5ae-8b5ff16db82d',
-      name: 'Boone-Yu Azure Subscription',
-      alias: '38f1d748-3ac7-4b7f-a5ae-8b5ff16db82d',
-      momChange: -80.79,
-      momPrevCost: '$115.34',
-      cost: '$61.38',
-      costPercent: '51.66',
-    },
-    {
-      id: '2f8e2495-aaad-47bc-8150-82a0cfc5d0c6',
-      name: 'Cost Management',
-      alias: '2f8e2495-aaad-47bc-8150-82a0cfc5d0c6',
-      momChange: 4.6,
-      momPrevCost: '$0.01',
-      cost: '$0.01',
-      costPercent: '0.01',
-    },
-  ];
+  // Get data from database
+  const dbAccounts = dataService.getAzureAccounts();
+  const totalAzureCost = dataService.getAzureTotalCost();
 
-  const totalItems = 3;
+  // Transform accounts data for the UI
+  const accounts: AccountItem[] = dbAccounts.map(account => {
+    const percentage = (account.cost / totalAzureCost) * 100;
+    const prevCost = account.cost / (1 + (account.monthOverMonthChange / 100));
+    
+    return {
+      id: account.subscriptionId,
+      name: account.displayName,
+      alias: account.subscriptionId,
+      momChange: account.monthOverMonthChange,
+      momPrevCost: dataService.formatCurrency(prevCost),
+      cost: dataService.formatCurrency(account.cost),
+      costPercent: percentage.toFixed(2),
+    };
+  });
+
+  const totalItems = accounts.length;
 
   const getSortParams = (columnIndex: number): ThProps['sort'] => ({
     sortBy: {
@@ -165,24 +155,25 @@ const Azure: React.FunctionComponent = () => {
             </FlexItem>
           </Flex>
 
-          {/* Controls and Status Row */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ alignItems: 'unset' }}>
+          {/* Integration Status and Total Cost Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
-              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                {/* Integration Status */}
-                <FlexItem>
-                  <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
-                  <span style={{ marginRight: '0.5rem' }}>3</span>
-                  <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <span style={{ marginRight: '0.5rem' }}>1</span>
-                  <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
-                  <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
-                    View all
-                  </Button>
-                </FlexItem>
-              </Flex>
+              <span style={{ marginRight: '0.5rem' }}>Integrations status</span>
+              <span style={{ marginRight: '0.5rem' }}>3</span>
+              <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <span style={{ marginRight: '0.5rem' }}>1</span>
+              <PauseIcon style={{ fontSize: '0.75rem', paddingRight: '0.5rem' }} />
+              <Button variant="link" style={{ fontSize: 'var(--pf-t--global--font--size--body--sm)', padding: 0 }}>
+                View all
+              </Button>
             </FlexItem>
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              <Title headingLevel="h2" size="3xl" style={{ marginBottom: 0 }}>$118.82</Title>
+            </FlexItem>
+          </Flex>
 
+          {/* Controls and Date Row */}
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
             <FlexItem>
               <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {/* Group by */}
@@ -234,17 +225,8 @@ const Azure: React.FunctionComponent = () => {
                 </Select>
               </Flex>
             </FlexItem>
-          </Flex>
-
-          {/* Total Cost Display */}
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
-            <FlexItem>
-              <Title headingLevel="h2" size="4xl" style={{ marginTop: 'var(--pf-t--global--spacer--lg)', marginBottom: 0 }}>
-                $118.82
-              </Title>
-            </FlexItem>
-            <FlexItem style={{ textAlign: 'end' }}>
-              October 1 – 23
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }} style={{ textAlign: 'end' }}>
+              October 1 – 24
             </FlexItem>
           </Flex>
         </Flex>
