@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { OpenShift } from '@app/OpenShift/OpenShift';
 import { Overview } from '@app/CostManagement/Overview/Overview';
 import { Optimizations } from '@app/CostManagement/Optimizations/Optimizations';
+import OptimizationDetail from '@app/CostManagement/Optimizations/OptimizationDetail/OptimizationDetail';
 import { CostManagementOpenShift } from '@app/CostManagement/OpenShift/CostManagementOpenShift';
 import { ClusterDetail } from '@app/CostManagement/OpenShift/ClusterDetail/ClusterDetail';
 import NodeDetail from '@app/CostManagement/OpenShift/NodeDetail/NodeDetail';
@@ -12,6 +13,7 @@ import { GCPAccountDetails } from '@app/CostManagement/GCP/GCPAccountDetails';
 import { Azure } from '@app/CostManagement/Azure/Azure';
 import { CostExplorer } from '@app/CostManagement/CostExplorer/CostExplorer';
 import { CostManagementSettings } from '@app/CostManagement/Settings/CostManagementSettings';
+import CostModelDetail from '@app/CostManagement/Settings/CostModelDetail/CostModelDetail';
 import { NotFound } from '@app/NotFound/NotFound';
 
 export interface IAppRoute {
@@ -54,6 +56,12 @@ const routes: AppRouteConfig[] = [
         label: 'Optimizations',
         path: '/cost-management/optimizations',
         title: 'Cost Management | Optimizations',
+      },
+      {
+        element: <OptimizationDetail />,
+        exact: true,
+        path: '/cost-management/optimizations/:id',
+        title: 'Cost Management | Optimization Details',
       },
       {
         element: <CostManagementOpenShift />,
@@ -114,6 +122,12 @@ const routes: AppRouteConfig[] = [
         label: 'Settings',
         path: '/cost-management/settings',
         title: 'Cost Management | Settings',
+      },
+      {
+        element: <CostModelDetail />,
+        exact: true,
+        path: '/cost-management/settings/cost-model/:costModelId',
+        title: 'Cost Management | Cost Model Details',
       },
     ],
   },
