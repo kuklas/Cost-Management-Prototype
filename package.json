@@ -11,7 +11,7 @@
     "build:11890": "cd prototypes/RHINENG-11890-Namespace-Project-level-recommendations && npm run build",
     "start": "node server.js",
     "serve": "npm run build:all && npm start",
-    "predeploy": "npm run build:all && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
+    "predeploy": "npm run build:all && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && touch deploy/.nojekyll && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
     "deploy": "gh-pages -d deploy -t"
   },
   "dependencies": {
