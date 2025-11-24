@@ -10,9 +10,14 @@
     "build:6287": "cd prototypes/COST-6287-EfficiencyRatios-cluster-level && npm run build",
     "build:11890": "cd prototypes/RHINENG-11890-Namespace-Project-level-recommendations && npm run build",
     "start": "node server.js",
-    "serve": "npm run build:all && npm start"
+    "serve": "npm run build:all && npm start",
+    "predeploy": "npm run build:all && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
+    "deploy": "gh-pages -d deploy -t"
   },
   "dependencies": {
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
