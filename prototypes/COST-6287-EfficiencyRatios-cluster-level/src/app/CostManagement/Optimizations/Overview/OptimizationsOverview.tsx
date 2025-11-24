@@ -29,6 +29,7 @@ import {
   Label,
   ToggleGroup,
   ToggleGroupItem,
+  Popover,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import { 
@@ -62,17 +63,17 @@ const OptimizationsOverview: React.FunctionComponent = () => {
   const [timeRange, setTimeRange] = React.useState('Last 30 days');
   const [clusterSelectOpen, setClusterSelectOpen] = React.useState(false);
   const [selectedCluster, setSelectedCluster] = React.useState('all');
-  
-  // Formula visibility states for each gauge
-  const [showFormulas, setShowFormulas] = React.useState({
+
+  // Recommendations visibility states
+  const [showRecommendations, setShowRecommendations] = React.useState({
     usage: false,
     waste: false,
     cost: false,
     overhead: false
   });
 
-  // Recommendations visibility states
-  const [showRecommendations, setShowRecommendations] = React.useState({
+  // Show more factors states
+  const [showAllFactors, setShowAllFactors] = React.useState({
     usage: false,
     waste: false,
     cost: false,
@@ -153,12 +154,12 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     overheadEff: Math.round(((cluster.totalCapacityCost - cluster.overheadCapacityCost) / cluster.totalCapacityCost) * 100),
   }));
 
-  // Find worst performing cluster for each metric
+  // Find worst performing clusters for each metric (sorted by worst first)
   const worstClusters = {
-    usage: clusterEfficiencies.reduce((worst, curr) => curr.usageEff < worst.usageEff ? curr : worst),
-    waste: clusterEfficiencies.reduce((worst, curr) => curr.wasteScore > worst.wasteScore ? curr : worst),
-    cost: clusterEfficiencies.reduce((worst, curr) => curr.costEff < worst.costEff ? curr : worst),
-    overhead: clusterEfficiencies.reduce((worst, curr) => curr.overheadEff < worst.overheadEff ? curr : worst),
+    usage: [...clusterEfficiencies].sort((a, b) => a.usageEff - b.usageEff),
+    waste: [...clusterEfficiencies].sort((a, b) => b.wasteScore - a.wasteScore),
+    cost: [...clusterEfficiencies].sort((a, b) => a.costEff - b.costEff),
+    overhead: [...clusterEfficiencies].sort((a, b) => a.overheadEff - b.overheadEff),
   };
 
   // Calculate efficiency scores based on formulas from COST-6287
@@ -289,22 +290,22 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     return '#3E8635'; // Green
   };
 
-  const renderGauge = (efficiency: any, formulaKey: 'usage' | 'waste' | 'cost' | 'overhead', recommendations: { short: string[]; detailed: string[] }, worstCluster?: any) => {
+  const renderGauge = (efficiency: any, formulaKey: 'usage' | 'waste' | 'cost' | 'overhead', recommendations: { short: string[]; detailed: string[] }, worstClustersList?: any[]) => {
     const percentage = efficiency.value;
     const rotation = (percentage / 100) * 180; // 180 degrees for semicircle
     const color = getGaugeColor(percentage, efficiency.betterDirection);
-    const showFormula = showFormulas[formulaKey];
     const showRecs = showRecommendations[formulaKey];
-    
-    const toggleFormula = () => {
-      setShowFormulas(prev => ({
+    const showAll = showAllFactors[formulaKey];
+
+    const toggleRecommendations = () => {
+      setShowRecommendations(prev => ({
         ...prev,
         [formulaKey]: !prev[formulaKey]
       }));
     };
 
-    const toggleRecommendations = () => {
-      setShowRecommendations(prev => ({
+    const toggleFactors = () => {
+      setShowAllFactors(prev => ({
         ...prev,
         [formulaKey]: !prev[formulaKey]
       }));
@@ -316,144 +317,181 @@ const OptimizationsOverview: React.FunctionComponent = () => {
           <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             {/* Header */}
             <FlexItem>
-              <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }} justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+              <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                  <Flex direction={{ default: 'column' }}>
+                  <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                     <FlexItem>
                       <Title headingLevel="h3" size="lg" style={{ color: '#151515' }}>
                         {efficiency.label}
                       </Title>
                     </FlexItem>
                     <FlexItem>
-                      <span style={{ fontSize: '13px', color: '#6a6e73' }}>
-                        {efficiency.description}
-                      </span>
+                      <Popover
+                        headerContent={<div>How this is calculated</div>}
+                        bodyContent={
+                          <div style={{ fontSize: '12px' }}>
+                            <div style={{ color: '#151515', marginBottom: '0.5rem', fontWeight: 600 }}>
+                              Formula:
+                            </div>
+                            <code style={{ 
+                              color: '#0066cc', 
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              display: 'block',
+                              marginBottom: '0.75rem'
+                            }}>
+                              {efficiency.formula}
+                            </code>
+                            
+                            <div style={{ color: '#151515', marginBottom: '0.5rem', fontWeight: 600 }}>
+                              Calculation:
+                            </div>
+                            <code style={{ 
+                              color: '#4d4d4d', 
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              display: 'block'
+                            }}>
+                              {efficiency.calculation} = {percentage}%
+                            </code>
+                          </div>
+                        }
+                        position="right"
+                      >
+                        <Button 
+                          variant="plain" 
+                          aria-label="Show calculation"
+                          style={{ padding: 0, minWidth: 'auto' }}
+                        >
+                          <OutlinedQuestionCircleIcon style={{ color: '#6a6e73', fontSize: '16px' }} />
+                        </Button>
+                      </Popover>
                     </FlexItem>
                   </Flex>
                 </FlexItem>
                 <FlexItem>
-                  <Label 
-                    color={efficiency.betterDirection === 'higher' ? 'green' : 'orange'} 
-                    isCompact
-                    style={{ fontSize: '11px' }}
-                  >
-                    {efficiency.betterDirection === 'higher' ? '↑ Higher is better' : '↓ Lower is better'}
-                  </Label>
+                  <span style={{ fontSize: '13px', color: '#6a6e73' }}>
+                    {efficiency.description}
+                  </span>
                 </FlexItem>
               </Flex>
             </FlexItem>
 
-            {/* Cluster Attention Callout (only show in Overall view) */}
-            {selectedCluster === 'all' && worstCluster && (
-              <FlexItem>
-                <div style={{
-                  background: '#fff4e5',
-                  border: '1px solid #f0ab00',
-                  borderRadius: '4px',
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '12px'
-                }}>
-                  <span style={{ fontWeight: 600, color: '#795600' }}>⚠️ Needs attention: </span>
-                  <span style={{ color: '#4d4d4d' }}>
-                    {worstCluster.name} ({formulaKey === 'usage' ? worstCluster.usageEff : 
-                                          formulaKey === 'waste' ? worstCluster.wasteScore :
-                                          formulaKey === 'cost' ? worstCluster.costEff :
-                                          worstCluster.overheadEff}%)
-                  </span>
-                </div>
-              </FlexItem>
-            )}
-
             {/* Gauge Chart */}
             <FlexItem style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <div style={{ position: 'relative', width: '200px', height: '120px', margin: '0 auto' }}>
-                {/* Background arc */}
-                <svg width="200" height="120" style={{ position: 'absolute', top: 0, left: 0 }}>
-                  <defs>
-                    <linearGradient id={`gradient-${efficiency.label.replace(/\s+/g, '-')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#C9190B" />
-                      <stop offset="50%" stopColor="#F0AB00" />
-                      <stop offset="100%" stopColor="#3E8635" />
-                    </linearGradient>
-                  </defs>
-                  {/* Background track */}
-                  <path
-                    d="M 20 100 A 80 80 0 0 1 180 100"
-                    fill="none"
-                    stroke="#e0e0e0"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                  />
-                  {/* Colored progress arc */}
-                  <path
-                    d="M 20 100 A 80 80 0 0 1 180 100"
-                    fill="none"
-                    stroke={`url(#gradient-${efficiency.label.replace(/\s+/g, '-')})`}
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(percentage / 100) * 251.2} 251.2`}
-                  />
-                  {/* Needle */}
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="100"
-                    y2="30"
-                    stroke="#151515"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    style={{
-                      transformOrigin: '100px 100px',
-                      transform: `rotate(${rotation - 90}deg)`,
-                      transition: 'transform 1s ease-out'
-                    }}
-                  />
-                  {/* Center dot */}
-                  <circle cx="100" cy="100" r="4" fill="#151515" />
-                </svg>
-                
-                {/* Labels */}
-                <div style={{ 
-                  position: 'absolute', 
-                  bottom: '10px', 
-                  left: '10px',
-                  fontSize: '11px',
-                  color: '#6a6e73'
-                }}>
-                  0
-                </div>
-                <div style={{ 
-                  position: 'absolute', 
-                  bottom: '10px', 
-                  right: '10px',
-                  fontSize: '11px',
-                  color: '#6a6e73'
-                }}>
-                  100%
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: '200px', height: '120px' }}>
+                  {/* Background arc */}
+                  <svg width="200" height="120" style={{ position: 'absolute', top: 0, left: 0 }}>
+                    <defs>
+                      <linearGradient id={`gradient-${efficiency.label.replace(/\s+/g, '-')}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#C9190B" />
+                        <stop offset="50%" stopColor="#F0AB00" />
+                        <stop offset="100%" stopColor="#3E8635" />
+                      </linearGradient>
+                    </defs>
+                    {/* Background track */}
+                    <path
+                      d="M 20 100 A 80 80 0 0 1 180 100"
+                      fill="none"
+                      stroke="#e0e0e0"
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                    />
+                    {/* Colored progress arc */}
+                    <path
+                      d="M 20 100 A 80 80 0 0 1 180 100"
+                      fill="none"
+                      stroke={`url(#gradient-${efficiency.label.replace(/\s+/g, '-')})`}
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(percentage / 100) * 251.2} 251.2`}
+                    />
+                    {/* Needle */}
+                    <line
+                      x1="100"
+                      y1="100"
+                      x2="100"
+                      y2="30"
+                      stroke="#8a8d90"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      style={{
+                        transformOrigin: '100px 100px',
+                        transform: `rotate(${rotation - 90}deg)`,
+                        transition: 'transform 1s ease-out'
+                      }}
+                    />
+                    {/* Center dot */}
+                    <circle cx="100" cy="100" r="3" fill="#8a8d90" />
+                  </svg>
+                  
+                  {/* Center value */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -20%)',
+                    fontSize: '36px',
+                    fontWeight: 300,
+                    color: '#151515'
+                  }}>
+                    {percentage}%
+                  </div>
                 </div>
                 
-                {/* Center value */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -20%)',
-                  fontSize: '36px',
-                  fontWeight: 300,
-                  color: '#151515'
+                {/* Labels below chart */}
+                <div style={{ 
+                  position: 'relative',
+                  width: '200px',
+                  marginTop: '0.5rem',
+                  height: '20px'
                 }}>
-                  {percentage}%
+                  {/* 0% aligned with arc start */}
+                  <div style={{ 
+                    position: 'absolute',
+                    left: '14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#151515'
+                  }}>
+                    0%
+                  </div>
+                  
+                  {/* Target range indicator in center */}
+                  <div style={{ 
+                    position: 'absolute',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: '11px',
+                    color: '#3E8635',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {efficiency.betterDirection === 'higher' ? 'Target: 80-100%' : 'Target: 0-20%'}
+                  </div>
+                  
+                  {/* 100% aligned with arc end */}
+                  <div style={{ 
+                    position: 'absolute',
+                    right: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#151515'
+                  }}>
+                    100%
+                  </div>
                 </div>
-              </div>
-              
-              <div style={{ 
-                marginTop: '1rem',
-                fontSize: '13px',
-                color: '#6a6e73',
-                lineHeight: '1.5',
-                textAlign: 'center'
-              }}>
-                Cluster: {clusterData.name}
+                
+                <div style={{ 
+                  marginTop: '0.5rem',
+                  fontSize: '13px',
+                  color: '#6a6e73',
+                  lineHeight: '1.5',
+                  textAlign: 'center'
+                }}>
+                  Cluster: {clusterData.name}
+                </div>
               </div>
             </FlexItem>
 
@@ -462,7 +500,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
               <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <FlexItem>
                   <div style={{ color: '#151515', marginBottom: '0.5rem', fontSize: '13px', fontWeight: 600 }}>
-                    💡 Recommendations
+                    Recommendations
                   </div>
                 </FlexItem>
                 <FlexItem>
@@ -494,55 +532,66 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                     </ul>
                   </FlexItem>
                 )}
-
-                <FlexItem style={{ marginTop: '0.5rem' }}>
-                  <Button 
-                    variant="link" 
-                    onClick={toggleFormula}
-                    style={{ padding: 0, fontSize: '12px', color: '#6a6e73' }}
-                  >
-                    {showFormula ? '− Hide calculation' : 'ⓘ Show how this was calculated'}
-                  </Button>
-                </FlexItem>
-
-                {showFormula && (
-                  <FlexItem>
-                    <div style={{ 
-                      background: '#f5f5f5', 
-                      padding: '0.75rem', 
-                      borderRadius: '4px',
-                      border: '1px solid #d2d2d2',
-                      fontSize: '12px'
-                    }}>
-                      <div style={{ color: '#151515', marginBottom: '0.25rem', fontWeight: 600 }}>
-                        Formula:
-                      </div>
-                      <code style={{ 
-                        color: '#0066cc', 
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        display: 'block',
-                        marginBottom: '0.5rem'
-                      }}>
-                        {efficiency.formula}
-                      </code>
-                      
-                      <div style={{ color: '#151515', marginBottom: '0.25rem', fontWeight: 600 }}>
-                        Calculation:
-                      </div>
-                      <code style={{ 
-                        color: '#4d4d4d', 
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        display: 'block'
-                      }}>
-                        {efficiency.calculation} = {percentage}%
-                      </code>
-                    </div>
-                  </FlexItem>
-                )}
               </Flex>
             </FlexItem>
+
+            {/* Factors affecting the score (only show in Overall view) */}
+            {selectedCluster === 'all' && worstClustersList && worstClustersList.length > 0 && (
+              <FlexItem style={{ paddingTop: '1rem', borderTop: '1px solid #d2d2d2' }}>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
+                  <FlexItem>
+                    <div style={{ color: '#151515', marginBottom: '0.5rem', fontSize: '13px', fontWeight: 600 }}>
+                      Top 3 clusters affecting this metric
+                    </div>
+                  </FlexItem>
+                  
+                  {/* Compact table-like structure */}
+                  <FlexItem>
+                    <div style={{ 
+                      fontSize: '12px',
+                      borderBottom: '1px solid #d2d2d2'
+                    }}>
+                      {(showAll ? worstClustersList : worstClustersList.slice(0, 3)).map((cluster, index) => (
+                        <div 
+                          key={cluster.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.5rem 0',
+                            borderTop: index === 0 ? 'none' : '1px solid #f0f0f0'
+                          }}
+                        >
+                          <span>
+                            <span style={{ color: '#6a6e73', marginRight: '0.5rem', fontSize: '11px' }}>#{index + 1}</span>
+                            <span style={{ color: '#151515' }}>{cluster.name}</span>
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#151515' }}>
+                            {formulaKey === 'usage' ? cluster.usageEff : 
+                             formulaKey === 'waste' ? cluster.wasteScore :
+                             formulaKey === 'cost' ? cluster.costEff :
+                             cluster.overheadEff}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </FlexItem>
+
+                  {/* See more/less button */}
+                  {worstClustersList.length > 3 && (
+                    <FlexItem style={{ marginTop: '0.5rem' }}>
+                      <Button 
+                        variant="link" 
+                        onClick={toggleFactors}
+                        style={{ padding: 0, fontSize: '12px', color: '#0066cc' }}
+                      >
+                        {showAll ? '− Show less' : `+ See ${worstClustersList.length - 3} more`}
+                      </Button>
+                    </FlexItem>
+                  )}
+                </Flex>
+              </FlexItem>
+            )}
           </Flex>
         </CardBody>
       </Card>
@@ -1057,4 +1106,5 @@ const OptimizationsOverview: React.FunctionComponent = () => {
 };
 
 export default OptimizationsOverview;
+
 
