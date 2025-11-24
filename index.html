@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Management Prototypes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f4f5f7;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 24px 32px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #5e6c84;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .column {
+            background: #ebecf0;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 400px;
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+        }
+
+        .column-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #172b4d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .column-count {
+            background: #091e4221;
+            color: #172b4d;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-id {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0052cc;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+            transition: color 0.2s ease;
+        }
+
+        .card-id:hover {
+            color: #0065ff;
+            text-decoration: underline;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #172b4d;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .card-description {
+            font-size: 12px;
+            color: #5e6c84;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .card-labels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .label {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .label-frontend { background: #0052cc; }
+        .label-backend { background: #00875a; }
+        .label-design { background: #ff5630; }
+        .label-dev { background: #6554c0; }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #ebecf0;
+        }
+
+        .assignee {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .empty-column {
+            text-align: center;
+            padding: 32px 16px;
+            color: #8993a4;
+            font-size: 13px;
+        }
+
+        .footer {
+            background: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            text-align: center;
+            color: #5e6c84;
+            font-size: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 1200px) {
+            .board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Cost Management Prototypes Board</h1>
+        <p class="subtitle">Track and navigate through all prototypes</p>
+    </div>
+
+    <div class="board" id="board">
+        <!-- Columns will be dynamically generated -->
+    </div>
+
+    <div class="footer">
+        Built with PatternFly • Cost Management Team
+    </div>
+
+    <script>
+        const prototypes = [
+            {
+                id: 'COST-6922',
+                title: 'Google Cloud Invoice Month Cost Perspective',
+                description: 'Complete cost management prototype featuring OpenShift clusters, AWS, GCP, and Azure cost tracking with advanced cost models, optimizations, and detailed reporting.',
+                path: 'prototypes/COST-6922-GoogleCloudInvoiceMonthCostPerspective',
+                devPort: 3000,
+                status: 'in-progress',
+                jiraUrl: 'https://issues.redhat.com/browse/COST-6922'
+            },
+            {
+                id: 'COST-6881',
+                title: 'Adding Architecture for OCP Node and Clusters',
+                description: 'Prototype for adding architecture information and filtering capabilities for OpenShift nodes and clusters.',
+                path: 'prototypes/COST-6881-AddingArchitectureForOCPNodeAndClusters',
+                devPort: 3001,
+                status: 'in-progress',
+                jiraUrl: 'https://issues.redhat.com/browse/COST-6881'
+            },
+            {
+                id: 'COST-6951',
+                title: 'Cost Tiers',
+                description: 'Prototype for implementing cost tier functionality and categorization in the cost management system.',
+                path: 'prototypes/COST-6951-CostTiers',
+                devPort: 3002,
+                status: 'in-progress',
+                jiraUrl: 'https://issues.redhat.com/browse/COST-6951'
+            },
+            {
+                id: 'COST-6287',
+                title: 'Efficiency Ratios - Cluster Level',
+                description: 'Prototype for displaying and analyzing efficiency ratios at the cluster level for resource optimization.',
+                path: 'prototypes/COST-6287-EfficiencyRatios-cluster-level',
+                devPort: 3003,
+                status: 'in-progress',
+                jiraUrl: 'https://issues.redhat.com/browse/COST-6287'
+            },
+            {
+                id: 'RHINENG-11890',
+                title: 'Namespace/Project level recommendations',
+                description: 'Prototype for providing optimization recommendations at the namespace and project level.',
+                path: 'prototypes/RHINENG-11890-Namespace-Project-level-recommendations',
+                devPort: 3004,
+                status: 'in-review',
+                jiraUrl: 'https://issues.redhat.com/browse/RHINENG-11890'
+            }
+        ];
+
+        const columns = [
+            { id: 'backlog', title: 'Backlog', status: 'backlog' },
+            { id: 'in-progress', title: 'In Progress', status: 'in-progress' },
+            { id: 'in-review', title: 'In Review', status: 'in-review' },
+            { id: 'done', title: 'Done', status: 'done' }
+        ];
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+            columns.forEach(column => {
+                const columnEl = document.createElement('div');
+                columnEl.className = 'column';
+                columnEl.id = column.id;
+
+                const columnPrototypes = prototypes.filter(p => p.status === column.status);
+
+                columnEl.innerHTML = `
+                    <div class="column-header">
+                        <span class="column-title">${column.title}</span>
+                        <span class="column-count">${columnPrototypes.length}</span>
+                    </div>
+                `;
+
+                if (columnPrototypes.length === 0) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-column';
+                    emptyState.textContent = 'No prototypes yet';
+                    columnEl.appendChild(emptyState);
+                } else {
+                    columnPrototypes.forEach(proto => {
+                        const card = document.createElement('a');
+                        card.className = 'card';
+                        
+                        // Always use the dist folder (same localhost)
+                        card.href = `${proto.path}/dist/index.html`;
+
+                        card.innerHTML = `
+                            <a href="${proto.jiraUrl || '#'}" class="card-id" target="_blank" onclick="event.stopPropagation();">${proto.id}</a>
+                            <div class="card-title">${proto.title}</div>
+                            <div class="card-description">${proto.description}</div>
+                        `;
+
+                        columnEl.appendChild(card);
+                    });
+                }
+
+                board.appendChild(columnEl);
+            });
+        }
+
+        // Render board when page loads
+        renderBoard();
+    </script>
+</body>
+</html>
+

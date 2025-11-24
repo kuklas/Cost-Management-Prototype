@@ -1,11 +1,25 @@
-**/node_modules
-dist
-yarn-error.log
-yarn.lock
-stats.json
-coverage
-storybook-static
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-.idea
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
 .env
-.history
+.env.local
+
