@@ -17,7 +17,7 @@
     "build:11890:gh": "cd prototypes/RHINENG-11890-Namespace-Project-level-recommendations && ASSET_PATH=/Cost-Management-Prototype/prototypes/RHINENG-11890-Namespace-Project-level-recommendations/dist/ npm run build",
     "start": "node server.js",
     "serve": "npm run build:all && npm start",
-    "predeploy": "npm run build:all:gh && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && touch deploy/.nojekyll && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
+    "predeploy": "npm run build:all:gh && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && touch deploy/.nojekyll && echo '# Deployment - no ignores' > deploy/.gitignore && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
     "deploy": "gh-pages -d deploy -t"
   },
   "dependencies": {
