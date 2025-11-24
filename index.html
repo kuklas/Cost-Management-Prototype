@@ -312,8 +312,8 @@
                         
                         // Special routing for specific prototypes
                         let fullPath;
-                        if (proto.id === 'RHINENG-11890') {
-                            // Land on optimizations page for namespace recommendations
+                        if (proto.id === 'RHINENG-11890' || proto.id === 'COST-6287') {
+                            // Land on optimizations page for namespace recommendations and efficiency ratios
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/optimizations` 
                                 : `${protoPath}/dist/index.html#/cost-management/optimizations`;
