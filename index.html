@@ -327,6 +327,11 @@
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/openshift/cluster/prod-us-east-001?showClusterInfo=true` 
                                 : `${protoPath}/dist/index.html#/cost-management/openshift/cluster/prod-us-east-001?showClusterInfo=true`;
+                        } else if (proto.id === 'COST-6951') {
+                            // Land on Settings page with Cost models tab for Cost Tiers prototype
+                            fullPath = isGitHubPages 
+                                ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/settings` 
+                                : `${protoPath}/dist/index.html#/cost-management/settings`;
                         } else {
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html` 
