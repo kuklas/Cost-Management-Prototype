@@ -277,6 +277,10 @@
         function renderBoard() {
             const board = document.getElementById('board');
             const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            // Detect if we're on GitHub Pages and construct base path
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            const basePath = isGitHubPages ? '/Cost-Management-Prototype' : '';
 
             columns.forEach(column => {
                 const columnEl = document.createElement('div');
@@ -302,8 +306,8 @@
                         const card = document.createElement('a');
                         card.className = 'card';
                         
-                        // Always use the dist folder (same localhost)
-                        card.href = `${proto.path}/dist/index.html`;
+                        // Construct proper path for both local and GitHub Pages
+                        card.href = `${basePath}/${proto.path}/dist/index.html`;
 
                         card.innerHTML = `
                             <a href="${proto.jiraUrl || '#'}" class="card-id" target="_blank" onclick="event.stopPropagation();">${proto.id}</a>
