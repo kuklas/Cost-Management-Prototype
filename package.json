@@ -4,14 +4,20 @@
   "description": "Cost Management Prototypes Landing Page",
   "scripts": {
     "build:all": "npm run build:6922 && npm run build:6881 && npm run build:6951 && npm run build:6287 && npm run build:11890",
+    "build:all:gh": "npm run build:6922:gh && npm run build:6881:gh && npm run build:6951:gh && npm run build:6287:gh && npm run build:11890:gh",
     "build:6922": "cd prototypes/COST-6922-GoogleCloudInvoiceMonthCostPerspective && npm run build",
+    "build:6922:gh": "cd prototypes/COST-6922-GoogleCloudInvoiceMonthCostPerspective && ASSET_PATH=/Cost-Management-Prototype/prototypes/COST-6922-GoogleCloudInvoiceMonthCostPerspective/dist/ npm run build",
     "build:6881": "cd prototypes/COST-6881-AddingArchitectureForOCPNodeAndClusters && npm run build",
+    "build:6881:gh": "cd prototypes/COST-6881-AddingArchitectureForOCPNodeAndClusters && ASSET_PATH=/Cost-Management-Prototype/prototypes/COST-6881-AddingArchitectureForOCPNodeAndClusters/dist/ npm run build",
     "build:6951": "cd prototypes/COST-6951-CostTiers && npm run build",
+    "build:6951:gh": "cd prototypes/COST-6951-CostTiers && ASSET_PATH=/Cost-Management-Prototype/prototypes/COST-6951-CostTiers/dist/ npm run build",
     "build:6287": "cd prototypes/COST-6287-EfficiencyRatios-cluster-level && npm run build",
+    "build:6287:gh": "cd prototypes/COST-6287-EfficiencyRatios-cluster-level && ASSET_PATH=/Cost-Management-Prototype/prototypes/COST-6287-EfficiencyRatios-cluster-level/dist/ npm run build",
     "build:11890": "cd prototypes/RHINENG-11890-Namespace-Project-level-recommendations && npm run build",
+    "build:11890:gh": "cd prototypes/RHINENG-11890-Namespace-Project-level-recommendations && ASSET_PATH=/Cost-Management-Prototype/prototypes/RHINENG-11890-Namespace-Project-level-recommendations/dist/ npm run build",
     "start": "node server.js",
     "serve": "npm run build:all && npm start",
-    "predeploy": "npm run build:all && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && touch deploy/.nojekyll && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
+    "predeploy": "npm run build:all:gh && rm -rf deploy && mkdir -p deploy/prototypes && cp index.html deploy/ && touch deploy/.nojekyll && for dir in prototypes/*/; do name=$(basename \"$dir\"); mkdir -p \"deploy/prototypes/$name\" && cp -r \"$dir/dist\" \"deploy/prototypes/$name/\"; done",
     "deploy": "gh-pages -d deploy -t"
   },
   "dependencies": {
