@@ -307,7 +307,14 @@
                         card.className = 'card';
                         
                         // Construct proper path for both local and GitHub Pages
-                        card.href = `${basePath}/${proto.path}/dist/index.html`;
+                        // Remove leading slash from proto.path if it exists, then construct full path
+                        const protoPath = proto.path.replace(/^\/+/, '');
+                        const fullPath = isGitHubPages 
+                            ? `/Cost-Management-Prototype/${protoPath}/dist/index.html` 
+                            : `${protoPath}/dist/index.html`;
+                        
+                        card.href = fullPath;
+                        console.log('Prototype:', proto.id, 'Generated href:', card.href); // Debug logging
 
                         card.innerHTML = `
                             <a href="${proto.jiraUrl || '#'}" class="card-id" target="_blank" onclick="event.stopPropagation();">${proto.id}</a>
