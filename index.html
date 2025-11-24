@@ -322,6 +322,11 @@
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/gcp` 
                                 : `${protoPath}/dist/index.html#/cost-management/gcp`;
+                        } else if (proto.id === 'COST-6881') {
+                            // Land on cluster detail page with cluster info modal open for architecture prototype
+                            fullPath = isGitHubPages 
+                                ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/openshift/cluster/prod-us-east-001?showClusterInfo=true` 
+                                : `${protoPath}/dist/index.html#/cost-management/openshift/cluster/prod-us-east-001?showClusterInfo=true`;
                         } else {
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html` 

@@ -27,16 +27,24 @@ import {
   Content,
   Label,
 } from '@patternfly/react-core';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircleIcon, OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import { dataService } from '@app/data/dataService';
 
 const ClusterDetail: React.FunctionComponent = () => {
   const { clusterId } = useParams<{ clusterId: string }>();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = React.useState<string | number>(0);
   const [currencyOpen, setCurrencyOpen] = React.useState(false);
   const [currency, setCurrency] = React.useState('USD ($) - United States Dollar');
   const [isClusterInfoModalOpen, setIsClusterInfoModalOpen] = React.useState(false);
+
+  // Check if we should auto-open the cluster info modal from URL parameter
+  React.useEffect(() => {
+    if (searchParams.get('showClusterInfo') === 'true') {
+      setIsClusterInfoModalOpen(true);
+    }
+  }, [searchParams]);
 
   const handleTabClick = (
     event: React.MouseEvent<HTMLElement, MouseEvent>,
