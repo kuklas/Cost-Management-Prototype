@@ -12,6 +12,7 @@ app.get('/', (req, res) => {
 // Serve static files from each prototype's dist folder
 const prototypes = [
   'COST-3353-ReportBuilder',
+  'COST-5691-UserConfigurableThresholds',
   'COST-6922-GoogleCloudInvoiceMonthCostPerspective',
   'COST-6881-AddingArchitectureForOCPNodeAndClusters',
   'COST-6951-CostTiers',
