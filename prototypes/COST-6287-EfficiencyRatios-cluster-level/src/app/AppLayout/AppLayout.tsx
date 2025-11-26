@@ -140,7 +140,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
       id={`${group.label}-${groupIndex}`}
       title={group.label}
       isActive={group.routes.some((route) => route.path === location.pathname)}
-      isExpanded={group.label === 'Cost Management' ? true : undefined}
+      isExpanded={group.label === 'Cost management' ? true : undefined}
     >
       {group.routes.map((route, idx) => route.label && renderNavItem(route, idx))}
     </NavExpandable>

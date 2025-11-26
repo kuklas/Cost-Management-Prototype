@@ -24,14 +24,16 @@ import {
   Label,
   ToggleGroup,
   ToggleGroupItem,
+  Divider,
+  Tooltip,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import { 
   FilterIcon, 
   ExportIcon,
   ExclamationTriangleIcon,
-  SortAmountDownIcon,
-  SortAmountUpIcon,
+  TrendDownIcon,
+  TrendUpIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
@@ -57,7 +59,9 @@ const Optimizations: React.FunctionComponent = () => {
   const [timeRangeOpen, setTimeRangeOpen] = React.useState(false);
   const [timeRange, setTimeRange] = React.useState('Last 24 hrs');
   const [projectFilterOpen, setProjectFilterOpen] = React.useState(false);
-  const [projectFilter, setProjectFilter] = React.useState('Project');
+  const [projectFilter, setProjectFilter] = React.useState('Project names');
+  const [filterModeOpen, setFilterModeOpen] = React.useState(false);
+  const [filterMode, setFilterMode] = React.useState('Includes');
   const [searchValue, setSearchValue] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(10);
@@ -68,6 +72,12 @@ const Optimizations: React.FunctionComponent = () => {
     const id = event.currentTarget.id;
     console.log('Toggle clicked:', id, 'isSelected:', isSelected);
     setActiveView(id);
+    // Reset filter to default when switching views
+    if (id === 'projects') {
+      setProjectFilter('Project names');
+    } else {
+      setProjectFilter('Container names');
+    }
   };
 
   // Mock data for Containers view
@@ -296,6 +306,7 @@ const Optimizations: React.FunctionComponent = () => {
         <div style={{ marginTop: 'var(--pf-t--global--spacer--sm)', color: 'var(--pf-t--global--text--color--regular)' }}>
           Get detailed recommendations for how to optimize your Red Hat OpenShift cost and performance.
         </div>
+        <Divider style={{ marginTop: 'var(--pf-t--global--spacer--md)' }} />
       </PageSection>
 
       {/* Main Content */}
@@ -420,15 +431,51 @@ const Optimizations: React.FunctionComponent = () => {
                             )}
                           >
                             <SelectList>
-                              <SelectOption value="Project">Project</SelectOption>
-                              <SelectOption value="Workload">Workload</SelectOption>
-                              <SelectOption value="Cluster">Cluster</SelectOption>
+                              {activeView === 'projects' ? (
+                                <>
+                                  <SelectOption value="Project names">Project names</SelectOption>
+                                  <SelectOption value="Project types">Project types</SelectOption>
+                                  <SelectOption value="Cluster names">Cluster names</SelectOption>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectOption value="Container names">Container names</SelectOption>
+                                  <SelectOption value="Workload names">Workload names</SelectOption>
+                                  <SelectOption value="Workload types">Workload types</SelectOption>
+                                  <SelectOption value="Cluster names">Cluster names</SelectOption>
+                                </>
+                              )}
+                            </SelectList>
+                          </Select>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                          <Select
+                            isOpen={filterModeOpen}
+                            onSelect={(_event, value) => {
+                              setFilterMode(value as string);
+                              setFilterModeOpen(false);
+                            }}
+                            onOpenChange={(isOpen) => setFilterModeOpen(isOpen)}
+                            selected={filterMode}
+                            toggle={(toggleRef) => (
+                              <MenuToggle 
+                                ref={toggleRef} 
+                                onClick={() => setFilterModeOpen(!filterModeOpen)} 
+                                isExpanded={filterModeOpen}
+                              >
+                                {filterMode}
+                              </MenuToggle>
+                            )}
+                          >
+                            <SelectList>
+                              <SelectOption value="Includes">Includes</SelectOption>
+                              <SelectOption value="Excludes">Excludes</SelectOption>
                             </SelectList>
                           </Select>
                         </ToolbarItem>
                         <ToolbarItem>
                           <SearchInput
-                            placeholder="Filter by project"
+                            placeholder={`Filter by ${projectFilter.toLowerCase()}`}
                             value={searchValue}
                             onChange={(_event, value) => setSearchValue(value)}
                             onClear={() => setSearchValue('')}
@@ -437,9 +484,11 @@ const Optimizations: React.FunctionComponent = () => {
                       </ToolbarGroup>
                     </ToolbarToggleGroup>
                     <ToolbarItem>
-                      <Button variant="link" icon={<ExportIcon />}>
-                        Export
-                      </Button>
+                      <Tooltip content="Export">
+                        <Button variant="plain" aria-label="Export">
+                          <ExportIcon />
+                        </Button>
+                      </Tooltip>
                     </ToolbarItem>
                     <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                       <Pagination
@@ -501,7 +550,7 @@ const Optimizations: React.FunctionComponent = () => {
                               paddingLeft: 'var(--pf-t--global--spacer--md)'
                             }}
                           >
-                            Memory
+                            Memory Requests
                           </Th>
                           <Th 
                             colSpan={2}
@@ -515,7 +564,7 @@ const Optimizations: React.FunctionComponent = () => {
                               paddingLeft: 'var(--pf-t--global--spacer--md)'
                             }}
                           >
-                            CPU
+                            CPU Requests
                           </Th>
                           <Th 
                             sort={getSortParams(6)}
@@ -625,7 +674,7 @@ const Optimizations: React.FunctionComponent = () => {
                               paddingLeft: 'var(--pf-t--global--spacer--md)'
                             }}
                           >
-                            Memory
+                            Memory Requests
                           </Th>
                           <Th 
                             colSpan={2}
@@ -639,7 +688,7 @@ const Optimizations: React.FunctionComponent = () => {
                               paddingLeft: 'var(--pf-t--global--spacer--md)'
                             }}
                           >
-                            CPU
+                            CPU Requests
                           </Th>
                           <Th 
                             sort={getSortParams(8)}
@@ -724,9 +773,9 @@ const Optimizations: React.FunctionComponent = () => {
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                                   <FlexItem>
                                     {item.memoryChange < 0 ? (
-                                      <SortAmountDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
+                                      <TrendDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
                                     ) : (
-                                      <SortAmountUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
+                                      <TrendUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
                                     )}
                                   </FlexItem>
                                   <FlexItem>{item.memoryChange}%</FlexItem>
@@ -743,9 +792,9 @@ const Optimizations: React.FunctionComponent = () => {
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                                   <FlexItem>
                                     {item.cpuChange < 0 ? (
-                                      <SortAmountDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
+                                      <TrendDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
                                     ) : (
-                                      <SortAmountUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
+                                      <TrendUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
                                     )}
                                   </FlexItem>
                                   <FlexItem>+{item.cpuChange}%</FlexItem>
@@ -775,9 +824,9 @@ const Optimizations: React.FunctionComponent = () => {
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                                   <FlexItem>
                                     {item.memoryChange < 0 ? (
-                                      <SortAmountDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
+                                      <TrendDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
                                     ) : (
-                                      <SortAmountUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
+                                      <TrendUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
                                     )}
                                   </FlexItem>
                                   <FlexItem>{item.memoryChange}%</FlexItem>
@@ -794,9 +843,9 @@ const Optimizations: React.FunctionComponent = () => {
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                                   <FlexItem>
                                     {item.cpuChange < 0 ? (
-                                      <SortAmountDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
+                                      <TrendDownIcon style={{ color: 'var(--pf-t--global--icon--color--status--danger--default)' }} />
                                     ) : (
-                                      <SortAmountUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
+                                      <TrendUpIcon style={{ color: 'var(--pf-t--global--icon--color--status--success--default)' }} />
                                     )}
                                   </FlexItem>
                                   <FlexItem>+{item.cpuChange}%</FlexItem>

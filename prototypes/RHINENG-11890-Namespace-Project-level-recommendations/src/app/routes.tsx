@@ -6,6 +6,7 @@ import { Optimizations } from '@app/CostManagement/Optimizations/Optimizations';
 import OptimizationDetail from '@app/CostManagement/Optimizations/OptimizationDetail/OptimizationDetail';
 import { CostManagementOpenShift } from '@app/CostManagement/OpenShift/CostManagementOpenShift';
 import { ClusterDetail } from '@app/CostManagement/OpenShift/ClusterDetail/ClusterDetail';
+import { ProjectDetail } from '@app/CostManagement/OpenShift/ProjectDetail/ProjectDetail';
 import NodeDetail from '@app/CostManagement/OpenShift/NodeDetail/NodeDetail';
 import { AWS } from '@app/CostManagement/AWS/AWS';
 import { GCP } from '@app/CostManagement/GCP/GCP';
@@ -36,7 +37,6 @@ const routes: AppRouteConfig[] = [
   {
     element: <OpenShift />,
     exact: true,
-    label: 'OpenShift',
     path: '/',
     title: 'Cost Management | OpenShift',
   },
@@ -46,7 +46,6 @@ const routes: AppRouteConfig[] = [
       {
         element: <Overview />,
         exact: true,
-        label: 'Overview',
         path: '/cost-management/overview',
         title: 'Cost Management | Overview',
       },
@@ -77,6 +76,12 @@ const routes: AppRouteConfig[] = [
         title: 'Cost Management | Cluster Details',
       },
       {
+        element: <ProjectDetail />,
+        exact: true,
+        path: '/cost-management/openshift/project/:projectId',
+        title: 'Cost Management | Project Details',
+      },
+      {
         element: <NodeDetail />,
         exact: true,
         path: '/cost-management/openshift/node/:nodeId',
@@ -85,14 +90,12 @@ const routes: AppRouteConfig[] = [
       {
         element: <AWS />,
         exact: true,
-        label: 'Amazon Web Services',
         path: '/cost-management/aws',
         title: 'Cost Management | Amazon Web Services',
       },
       {
         element: <GCP />,
         exact: true,
-        label: 'Google Cloud',
         path: '/cost-management/gcp',
         title: 'Cost Management | Google Cloud',
       },
@@ -105,21 +108,18 @@ const routes: AppRouteConfig[] = [
       {
         element: <Azure />,
         exact: true,
-        label: 'Microsoft Azure',
         path: '/cost-management/azure',
         title: 'Cost Management | Microsoft Azure',
       },
       {
         element: <CostExplorer />,
         exact: true,
-        label: 'Cost Explorer',
         path: '/cost-management/explorer',
         title: 'Cost Management | Cost Explorer',
       },
       {
         element: <CostManagementSettings />,
         exact: true,
-        label: 'Settings',
         path: '/cost-management/settings',
         title: 'Cost Management | Settings',
       },

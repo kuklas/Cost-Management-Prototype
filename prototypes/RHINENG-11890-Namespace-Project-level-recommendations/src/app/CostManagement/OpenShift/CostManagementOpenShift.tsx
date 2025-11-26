@@ -416,10 +416,10 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                     )}
                   >
                     <SelectList>
-                      <SelectOption value="Cluster">Cluster</SelectOption>
-                      <SelectOption value="Node">Node</SelectOption>
+                      <SelectOption value="Cluster" isDisabled>Cluster</SelectOption>
+                      <SelectOption value="Node" isDisabled>Node</SelectOption>
                       <SelectOption value="Project">Project</SelectOption>
-                      <SelectOption value="Tag">Tag</SelectOption>
+                      <SelectOption value="Tag" isDisabled>Tag</SelectOption>
                     </SelectList>
                   </Select>
                 </Flex>
@@ -666,7 +666,7 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                       }}
                     />
                     <Td dataLabel="Project names" modifier="nowrap">
-                      <Link to={`/cost-management/openshift/breakdown?breakdown_title=${project.name}&group_by[project]=${project.id}&id=${project.id}`}>
+                      <Link to={`/cost-management/openshift/project/${project.id}?breakdown_title=${project.name}`}>
                         {project.name}
                       </Link>
                     </Td>
@@ -677,7 +677,7 @@ const CostManagementOpenShift: React.FunctionComponent = () => {
                     </Td>
                     <Td dataLabel="Optimizations" modifier="nowrap">
                       {project.optimizations > 0 ? (
-                        <Link to={`/cost-management/openshift/breakdown?breakdown_title=${project.name}&group_by[project]=${project.id}&id=${project.id}&optimizationsTab=true`}>
+                        <Link to={`/cost-management/openshift/project/${project.id}?breakdown_title=${project.name}&optimizationsTab=true`}>
                           {project.optimizations}
                         </Link>
                       ) : (

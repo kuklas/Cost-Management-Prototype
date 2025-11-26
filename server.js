@@ -17,7 +17,9 @@ const prototypes = [
   'COST-6881-AddingArchitectureForOCPNodeAndClusters',
   'COST-6951-CostTiers',
   'COST-6287-EfficiencyRatios-cluster-level',
-  'RHINENG-11890-Namespace-Project-level-recommendations'
+  'RHINENG-11890-Namespace-Project-level-recommendations',
+  'COST-5109-GPU',
+  'COST-5705-ResourceOptimizationGPUs'
 ];
 
 prototypes.forEach(prototype => {

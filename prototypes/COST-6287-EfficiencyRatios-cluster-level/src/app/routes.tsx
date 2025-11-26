@@ -36,7 +36,6 @@ const routes: AppRouteConfig[] = [
   {
     element: <OpenShift />,
     exact: true,
-    label: 'OpenShift',
     path: '/',
     title: 'Cost Management | OpenShift',
   },
@@ -46,7 +45,6 @@ const routes: AppRouteConfig[] = [
       {
         element: <Overview />,
         exact: true,
-        label: 'Overview',
         path: '/cost-management/overview',
         title: 'Cost Management | Overview',
       },
@@ -66,7 +64,6 @@ const routes: AppRouteConfig[] = [
       {
         element: <CostManagementOpenShift />,
         exact: true,
-        label: 'OpenShift',
         path: '/cost-management/openshift',
         title: 'Cost Management | OpenShift',
       },
@@ -85,14 +82,12 @@ const routes: AppRouteConfig[] = [
       {
         element: <AWS />,
         exact: true,
-        label: 'Amazon Web Services',
         path: '/cost-management/aws',
         title: 'Cost Management | Amazon Web Services',
       },
       {
         element: <GCP />,
         exact: true,
-        label: 'Google Cloud',
         path: '/cost-management/gcp',
         title: 'Cost Management | Google Cloud',
       },
@@ -105,21 +100,18 @@ const routes: AppRouteConfig[] = [
       {
         element: <Azure />,
         exact: true,
-        label: 'Microsoft Azure',
         path: '/cost-management/azure',
         title: 'Cost Management | Microsoft Azure',
       },
       {
         element: <CostExplorer />,
         exact: true,
-        label: 'Cost Explorer',
         path: '/cost-management/explorer',
         title: 'Cost Management | Cost Explorer',
       },
       {
         element: <CostManagementSettings />,
         exact: true,
-        label: 'Settings',
         path: '/cost-management/settings',
         title: 'Cost Management | Settings',
       },
