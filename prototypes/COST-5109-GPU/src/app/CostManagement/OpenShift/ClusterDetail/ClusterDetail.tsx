@@ -27,6 +27,7 @@ import {
   Content,
   Label,
 } from '@patternfly/react-core';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { Link, useParams } from 'react-router-dom';
 import { CheckCircleIcon, OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import { dataService } from '@app/data/dataService';
@@ -382,6 +383,55 @@ const ClusterDetail: React.FunctionComponent = () => {
                       </Grid>
                       <div style={{ height: '147px', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pf-t--global--text--color--subtle)' }}>
                         Volume bullet chart
+                      </div>
+                    </CardBody>
+                  </Card>
+                </GridItem>
+
+                <GridItem>
+                  <Card>
+                    <CardTitle>
+                      <Title headingLevel="h2" size="lg">GPU</Title>
+                    </CardTitle>
+                    <CardBody>
+                      <Table variant="compact" borders={false}>
+                        <Thead>
+                          <Tr>
+                            <Th>Vendor</Th>
+                            <Th>Model</Th>
+                            <Th>Node</Th>
+                            <Th>Count</Th>
+                            <Th>Memory</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          <Tr>
+                            <Td>Nvidia</Td>
+                            <Td>H100</Td>
+                            <Td>Node 1337</Td>
+                            <Td>5</Td>
+                            <Td>512 GB</Td>
+                          </Tr>
+                          <Tr>
+                            <Td>Nvidia</Td>
+                            <Td>H200</Td>
+                            <Td>Node 1337</Td>
+                            <Td>3</Td>
+                            <Td>512 GB</Td>
+                          </Tr>
+                          <Tr>
+                            <Td>Nvidia</Td>
+                            <Td>H300</Td>
+                            <Td>Node 1337</Td>
+                            <Td>2</Td>
+                            <Td>512 GB</Td>
+                          </Tr>
+                        </Tbody>
+                      </Table>
+                      <div style={{ marginTop: '1rem' }}>
+                        <Button variant="link" isInline style={{ padding: 0 }}>
+                          View all (10 more)
+                        </Button>
                       </div>
                     </CardBody>
                   </Card>

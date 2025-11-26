@@ -53,6 +53,7 @@ import {
   Grid,
   GridItem,
   Alert,
+  AlertActionLink,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import {
@@ -63,8 +64,11 @@ import {
   EllipsisVIcon,
   TimesIcon,
   OutlinedQuestionCircleIcon,
+  InfoCircleIcon,
+  ExternalLinkAltIcon,
+  CheckCircleIcon,
 } from '@patternfly/react-icons';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { dataService } from '@app/data/dataService';
 
 interface CostModel {
@@ -98,6 +102,7 @@ interface PlatformProject {
 }
 
 const CostManagementSettings: React.FunctionComponent = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = React.useState<string | number>(0);
   const [categoryOpen, setCategoryOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState('');
@@ -197,6 +202,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
 
   // Wizard state
   const [isWizardOpen, setIsWizardOpen] = React.useState(false);
+  const [wizardComplete, setWizardComplete] = React.useState(false);
   const [wizardName, setWizardName] = React.useState('');
   const [wizardDescription, setWizardDescription] = React.useState('');
   const [wizardIntegrationOpen, setWizardIntegrationOpen] = React.useState(false);
@@ -207,6 +213,14 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [wizardMarkupRate, setWizardMarkupRate] = React.useState('0');
   const [wizardSelectedIntegrations, setWizardSelectedIntegrations] = React.useState<string[]>([]);
   const [wizardIntegrationSearchValue, setWizardIntegrationSearchValue] = React.useState('');
+
+  // Auto-open wizard if createWizard query parameter is present
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('createWizard') === 'true') {
+      setIsWizardOpen(true);
+    }
+  }, [location.search]);
 
   // OCP Wizard - Price list state
   const [ocpShowCreateRate, setOcpShowCreateRate] = React.useState(false);
@@ -222,6 +236,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [ocpRateTagValues, setOcpRateTagValues] = React.useState<Array<{value: string, rate: string, description: string, isDefault: boolean}>>([{value: '', rate: '', description: '', isDefault: false}]);
   const [ocpExpandedRates, setOcpExpandedRates] = React.useState<Set<number>>(new Set());
 
+  // GPU-specific state
+  const [gpuModels, setGpuModels] = React.useState<Array<{vendor: string, model: string, rate: string, description: string}>>([{vendor: 'Nvidia', model: '', rate: '', description: ''}]);
+  const [gpuVendorOpen, setGpuVendorOpen] = React.useState<{[key: number]: boolean}>({});
+  const [gpuModelOpen, setGpuModelOpen] = React.useState<{[key: number]: boolean}>({});
+
   // OCP Wizard - Cost calculations state
   const [ocpMarkupDiscount, setOcpMarkupDiscount] = React.useState<'markup' | 'discount'>('markup');
   const [ocpMarkupRate, setOcpMarkupRate] = React.useState('0');
@@ -232,6 +251,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
   const [ocpDistributeWorker, setOcpDistributeWorker] = React.useState(true);
   const [ocpDistributeNetwork, setOcpDistributeNetwork] = React.useState(true);
   const [ocpDistributeStorage, setOcpDistributeStorage] = React.useState(true);
+  const [ocpDistributeGpu, setOcpDistributeGpu] = React.useState(true);
 
   // AWS Wizard - Private offers state
   const [awsShowCreateCommitment, setAwsShowCreateCommitment] = React.useState(false);
@@ -1765,29 +1785,120 @@ const CostManagementSettings: React.FunctionComponent = () => {
         onClose={() => {
           resetWizardState();
           setIsWizardOpen(false);
+          setWizardComplete(false);
         }}
         aria-labelledby="create-cost-model-wizard-title"
       >
-        <Wizard
-          onClose={() => {
-            resetWizardState();
-            setIsWizardOpen(false);
-          }}
-          header={
+        {wizardComplete && (
+          <style>
+            {`
+              .pf-v6-c-modal-box__header { display: none !important; }
+              .pf-v6-c-modal-box__body { padding: 0 !important; }
+            `}
+          </style>
+        )}
+        {wizardComplete ? (
+          <div>
             <div style={{ 
-              padding: '24px', 
+              padding: '24px',
               backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
-              borderBottom: '1px solid var(--pf-t--global--border--color--default)'
+              borderBottom: '1px solid var(--pf-t--global--border--color--default)',
+              margin: '24px 24px 24px 24px'
             }}>
               <Title headingLevel="h1" size="2xl" style={{ marginBottom: '8px' }}>
                 Create a cost model
               </Title>
-              <p style={{ color: 'var(--pf-t--global--text--color--subtle)', margin: 0 }}>
+              <p style={{ 
+                color: 'var(--pf-t--global--text--color--subtle)',
+                margin: 0
+              }}>
                 A cost model allows you to associate a price to metrics provided by your integrations to charge for utilization of resources.
               </p>
             </div>
-          }
-        >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '400px',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+            <CheckCircleIcon 
+              style={{ 
+                fontSize: '64px', 
+                color: 'var(--pf-t--global--icon--color--status--success--default)', 
+                marginBottom: '24px' 
+              }} 
+            />
+            <Title headingLevel="h2" size="xl" style={{ marginBottom: '16px' }}>
+              Creation successful
+            </Title>
+            <p style={{ 
+              color: 'var(--pf-t--global--text--color--regular)', 
+              marginBottom: '32px',
+              maxWidth: '600px'
+            }}>
+              Costs for resources connected to the assigned integrations will now be calculated using the newly created "{wizardName}" cost model.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+              <Button 
+                variant="primary"
+                onClick={() => {
+                  resetWizardState();
+                  setIsWizardOpen(false);
+                  setWizardComplete(false);
+                }}
+              >
+                Open cost model details
+              </Button>
+              <Button 
+                variant="link"
+                onClick={() => {
+                  resetWizardState();
+                  setWizardComplete(false);
+                }}
+              >
+                Add another cost model
+              </Button>
+              <Button 
+                variant="link"
+                onClick={() => {
+                  resetWizardState();
+                  setIsWizardOpen(false);
+                  setWizardComplete(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+            </div>
+          </div>
+        ) : (
+        <Wizard
+            onClose={() => {
+              resetWizardState();
+              setIsWizardOpen(false);
+              setWizardComplete(false);
+            }}
+            onSave={() => {
+              setWizardComplete(true);
+            }}
+            header={(
+              <div style={{ 
+                padding: '24px', 
+                backgroundColor: 'var(--pf-t--global--background--color--secondary--default)',
+                borderBottom: '1px solid var(--pf-t--global--border--color--default)'
+              }}>
+                <Title headingLevel="h1" size="2xl" style={{ marginBottom: '8px' }}>
+                  Create a cost model
+                </Title>
+                <p style={{ color: 'var(--pf-t--global--text--color--subtle)', margin: 0 }}>
+                  A cost model allows you to associate a price to metrics provided by your integrations to charge for utilization of resources.
+                </p>
+              </div>
+            )}
+          >
           <WizardStep
             name="Enter information"
             id="general-info-step"
@@ -2437,6 +2548,13 @@ const CostManagementSettings: React.FunctionComponent = () => {
             <WizardStep
               name="Review details"
               id="review-step"
+              footer={{
+                nextButtonText: 'Create',
+                onNext: () => {
+                  setWizardComplete(true);
+                  return Promise.resolve();
+                }
+              }}
             >
               <Stack hasGutter>
                 <StackItem>
@@ -2604,22 +2722,26 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                       <Td>{rate.metric}</Td>
                                       <Td>{rate.description}</Td>
                                       <Td>{rate.measurement}</Td>
-                                      <Td>{rate.calculationType}</Td>
+                                      <Td>{rate.calculationType || 'Supplementary'}</Td>
                                       <Td>
-                                        <Button
-                                          variant="link"
-                                          onClick={() => {
-                                            const newExpanded = new Set(ocpExpandedRates);
-                                            if (ocpExpandedRates.has(index)) {
-                                              newExpanded.delete(index);
-                                            } else {
-                                              newExpanded.add(index);
-                                            }
-                                            setOcpExpandedRates(newExpanded);
-                                          }}
-                                        >
-                                          Various
-                                        </Button>
+                                        {rate.metric === 'GPU' || rate.tagKey ? (
+                                          <Button
+                                            variant="link"
+                                            onClick={() => {
+                                              const newExpanded = new Set(ocpExpandedRates);
+                                              if (ocpExpandedRates.has(index)) {
+                                                newExpanded.delete(index);
+                                              } else {
+                                                newExpanded.add(index);
+                                              }
+                                              setOcpExpandedRates(newExpanded);
+                                            }}
+                                          >
+                                            Various
+                                          </Button>
+                                        ) : (
+                                          '-'
+                                        )}
                                       </Td>
                                       <Td>
                                         <Button variant="plain" aria-label="Actions">
@@ -2630,28 +2752,51 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                     {ocpExpandedRates.has(index) && (
                                       <Tr isExpanded>
                                         <Td colSpan={6}>
-                                          <Table variant="compact" borders={false}>
-                                            <Thead>
-                                              <Tr>
-                                                <Th>Tag key</Th>
-                                                <Th>Tag value</Th>
-                                                <Th>Rate</Th>
-                                                <Th>Description</Th>
-                                                <Th>Default</Th>
-                                              </Tr>
-                                            </Thead>
-                                            <Tbody>
-                                              {rate.tagValues.map((tv: any, tvIndex: number) => (
-                                                <Tr key={tvIndex}>
-                                                  <Td>{rate.tagKey}</Td>
-                                                  <Td>{tv.value}</Td>
-                                                  <Td>${tv.rate}</Td>
-                                                  <Td>{tv.description}</Td>
-                                                  <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                          {rate.metric === 'GPU' && rate.gpuModels ? (
+                                            <Table variant="compact" borders={false}>
+                                              <Thead>
+                                                <Tr>
+                                                  <Th>Vendor</Th>
+                                                  <Th>Model</Th>
+                                                  <Th>Description</Th>
+                                                  <Th>Rate</Th>
                                                 </Tr>
-                                              ))}
-                                            </Tbody>
-                                          </Table>
+                                              </Thead>
+                                              <Tbody>
+                                                {rate.gpuModels.map((gpu: any, gpuIndex: number) => (
+                                                  <Tr key={gpuIndex}>
+                                                    <Td>{gpu.vendor}</Td>
+                                                    <Td>{gpu.model}</Td>
+                                                    <Td>{gpu.description}</Td>
+                                                    <Td>{gpu.rate}</Td>
+                                                  </Tr>
+                                                ))}
+                                              </Tbody>
+                                            </Table>
+                                          ) : (
+                                            <Table variant="compact" borders={false}>
+                                              <Thead>
+                                                <Tr>
+                                                  <Th>Tag key</Th>
+                                                  <Th>Tag value</Th>
+                                                  <Th>Rate</Th>
+                                                  <Th>Description</Th>
+                                                  <Th>Default</Th>
+                                                </Tr>
+                                              </Thead>
+                                              <Tbody>
+                                                {rate.tagValues.map((tv: any, tvIndex: number) => (
+                                                  <Tr key={tvIndex}>
+                                                    <Td>{rate.tagKey}</Td>
+                                                    <Td>{tv.value}</Td>
+                                                    <Td>${tv.rate}</Td>
+                                                    <Td>{tv.description}</Td>
+                                                    <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                                  </Tr>
+                                                ))}
+                                              </Tbody>
+                                            </Table>
+                                          )}
                                         </Td>
                                       </Tr>
                                     )}
@@ -2721,11 +2866,16 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                 onSelect={(_e, value) => {
                                   setOcpRateMetric(value as string);
                                   setOcpRateMetricOpen(false);
+                                  // Auto-set measurement for GPU
+                                  if (value === 'GPU') {
+                                    setOcpRateMeasurement('Count (GPU-month)');
+                                  }
                                 }}
                               >
                                 <SelectList>
                                   <SelectOption value="CPU">CPU</SelectOption>
                                   <SelectOption value="Cluster">Cluster</SelectOption>
+                                  <SelectOption value="GPU">GPU</SelectOption>
                                   <SelectOption value="Memory">Memory</SelectOption>
                                   <SelectOption value="Node">Node</SelectOption>
                                   <SelectOption value="Persistent volume claims">Persistent volume claims</SelectOption>
@@ -2743,6 +2893,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                     ref={toggleRef}
                                     onClick={() => setOcpRateMeasurementOpen(!ocpRateMeasurementOpen)}
                                     isExpanded={ocpRateMeasurementOpen}
+                                    isDisabled={ocpRateMetric === 'GPU'}
                                     style={{ width: '100%' }}
                                     aria-label="Select measurement"
                                   >
@@ -2757,40 +2908,211 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                 }}
                               >
                                 <SelectList>
-                                  <SelectOption value="Request (core-hours)">Request (core-hours)</SelectOption>
-                                  <SelectOption value="Usage (core-hours)">Usage (core-hours)</SelectOption>
-                                  <SelectOption value="Effective-usage (core-hours)">Effective-usage (core-hours)</SelectOption>
+                                  {ocpRateMetric === 'GPU' ? (
+                                    <SelectOption value="Count (GPU-month)">Count (GPU-month)</SelectOption>
+                                  ) : (
+                                    <>
+                                      <SelectOption value="Request (core-hours)">Request (core-hours)</SelectOption>
+                                      <SelectOption value="Usage (core-hours)">Usage (core-hours)</SelectOption>
+                                      <SelectOption value="Effective-usage (core-hours)">Effective-usage (core-hours)</SelectOption>
+                                    </>
+                                  )}
                                 </SelectList>
                               </Select>
                             </FormGroup>
                           </div>
 
-                          <FormGroup label="Calculation type" fieldId="calculation">
-                            <Radio
-                              id="calculation-infra"
-                              name="calculation"
-                              label="Infrastructure"
-                              isChecked={ocpRateCalculationType === 'infrastructure'}
-                              onChange={() => setOcpRateCalculationType('infrastructure')}
+                          {/* GPU Alert - shown outside the form */}
+                          {ocpRateMetric === 'GPU' && (
+                            <Alert
+                              variant="info"
+                              isInline
+                              isPlain
+                              title="Rate of GPU models will apply to all the same models in your cluster."
+                              actionLinks={
+                                <AlertActionLink component="a" href="#" target="_blank">
+                                  Read more about GPUs by reviewing our documentation. <ExternalLinkAltIcon style={{ marginLeft: '4px' }} />
+                                </AlertActionLink>
+                              }
+                              style={{ marginTop: '16px', marginBottom: '8px' }}
                             />
-                            <Radio
-                              id="calculation-suppl"
-                              name="calculation"
-                              label="Supplementary"
-                              isChecked={ocpRateCalculationType === 'supplementary'}
-                              onChange={() => setOcpRateCalculationType('supplementary')}
-                              style={{ marginLeft: '16px' }}
-                            />
-                          </FormGroup>
+                          )}
 
-                          <Checkbox
-                            id="enter-rate-by-tag"
-                            label="Enter rate by tag"
-                            isChecked={ocpRateByTag}
-                            onChange={(_event, checked) => setOcpRateByTag(checked)}
-                          />
+                          {/* GPU-specific form */}
+                          {ocpRateMetric === 'GPU' && (
+                            <>
+                              {gpuModels.map((gpu, index) => (
+                                <div key={index} style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '8px' }}>
+                                  <FormGroup label="Vendor" isRequired fieldId={`gpu-vendor-${index}`} style={{ minWidth: '150px' }}>
+                                    <Select
+                                      toggle={(toggleRef: React.Ref<any>) => (
+                                        <MenuToggle
+                                          ref={toggleRef}
+                                          onClick={() => setGpuVendorOpen({...gpuVendorOpen, [index]: !gpuVendorOpen[index]})}
+                                          isExpanded={gpuVendorOpen[index] || false}
+                                          style={{ width: '100%' }}
+                                        >
+                                          {gpu.vendor}
+                                        </MenuToggle>
+                                      )}
+                                      isOpen={gpuVendorOpen[index] || false}
+                                      onOpenChange={(isOpen) => setGpuVendorOpen({...gpuVendorOpen, [index]: isOpen})}
+                                      onSelect={(_e, value) => {
+                                        const newModels = [...gpuModels];
+                                        newModels[index].vendor = value as string;
+                                        setGpuModels(newModels);
+                                        setGpuVendorOpen({...gpuVendorOpen, [index]: false});
+                                      }}
+                                    >
+                                      <SelectList>
+                                        <SelectOption value="Nvidia">Nvidia</SelectOption>
+                                        <SelectOption value="AMD">AMD</SelectOption>
+                                        <SelectOption value="Intel">Intel</SelectOption>
+                                      </SelectList>
+                                    </Select>
+                                  </FormGroup>
 
-                          {ocpRateByTag && (
+                                  <FormGroup label="Model" isRequired fieldId={`gpu-model-${index}`} style={{ minWidth: '150px' }}>
+                                    <Select
+                                      toggle={(toggleRef: React.Ref<any>) => (
+                                        <MenuToggle
+                                          ref={toggleRef}
+                                          onClick={() => setGpuModelOpen({...gpuModelOpen, [index]: !gpuModelOpen[index]})}
+                                          isExpanded={gpuModelOpen[index] || false}
+                                          style={{ width: '100%' }}
+                                        >
+                                          {gpu.model || 'xx'}
+                                        </MenuToggle>
+                                      )}
+                                      isOpen={gpuModelOpen[index] || false}
+                                      onOpenChange={(isOpen) => setGpuModelOpen({...gpuModelOpen, [index]: isOpen})}
+                                      onSelect={(_e, value) => {
+                                        const newModels = [...gpuModels];
+                                        newModels[index].model = value as string;
+                                        setGpuModels(newModels);
+                                        setGpuModelOpen({...gpuModelOpen, [index]: false});
+                                      }}
+                                    >
+                                      <SelectList>
+                                        {gpu.vendor === 'Nvidia' && (
+                                          <>
+                                            <SelectOption value="A100">A100</SelectOption>
+                                            <SelectOption value="V100">V100</SelectOption>
+                                            <SelectOption value="T4">T4</SelectOption>
+                                            <SelectOption value="H100">H100</SelectOption>
+                                          </>
+                                        )}
+                                        {gpu.vendor === 'AMD' && (
+                                          <>
+                                            <SelectOption value="MI250">MI250</SelectOption>
+                                            <SelectOption value="MI210">MI210</SelectOption>
+                                            <SelectOption value="MI100">MI100</SelectOption>
+                                          </>
+                                        )}
+                                        {gpu.vendor === 'Intel' && (
+                                          <>
+                                            <SelectOption value="Flex 170">Flex 170</SelectOption>
+                                            <SelectOption value="Flex 140">Flex 140</SelectOption>
+                                          </>
+                                        )}
+                                      </SelectList>
+                                    </Select>
+                                  </FormGroup>
+
+                                  <FormGroup label="Rate" isRequired fieldId={`gpu-rate-${index}`} style={{ minWidth: '150px' }}>
+                                    <InputGroup>
+                                      <InputGroupItem>
+                                        <span style={{ marginRight: '8px', fontWeight: 700 }}>$</span>
+                                      </InputGroupItem>
+                                      <InputGroupItem isFill>
+                                        <TextInput
+                                          id={`gpu-rate-${index}`}
+                                          value={gpu.rate}
+                                          onChange={(_event, val) => {
+                                            const newModels = [...gpuModels];
+                                            newModels[index].rate = val;
+                                            setGpuModels(newModels);
+                                          }}
+                                          placeholder="xx"
+                                        />
+                                      </InputGroupItem>
+                                    </InputGroup>
+                                  </FormGroup>
+
+                                  <FormGroup label="Description" isRequired fieldId={`gpu-description-${index}`} style={{ minWidth: '200px', flex: 1 }}>
+                                    <TextInput
+                                      id={`gpu-description-${index}`}
+                                      value={gpu.description}
+                                      onChange={(_event, val) => {
+                                        const newModels = [...gpuModels];
+                                        newModels[index].description = val;
+                                        setGpuModels(newModels);
+                                      }}
+                                      placeholder="xx"
+                                    />
+                                  </FormGroup>
+
+                                  <FormGroup label={<div>&nbsp;</div>} fieldId={`gpu-remove-${index}`}>
+                                    <Button
+                                      variant="plain"
+                                      aria-label="Remove GPU"
+                                      onClick={() => {
+                                        const newModels = gpuModels.filter((_, i) => i !== index);
+                                        setGpuModels(newModels);
+                                      }}
+                                    >
+                                      <MinusCircleIcon />
+                                    </Button>
+                                  </FormGroup>
+                                </div>
+                              ))}
+
+                              <div>
+                                <Button
+                                  variant="link"
+                                  icon={<svg fill="currentColor" height="1em" width="1em" viewBox="0 0 512 512"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z" /></svg>}
+                                  onClick={() => {
+                                    setGpuModels([...gpuModels, { vendor: 'Nvidia', model: '', rate: '', description: '' }]);
+                                  }}
+                                  style={{ paddingLeft: 0 }}
+                                >
+                                  Add more GPUs
+                                </Button>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Hide Calculation type and Enter rate by tag for GPU metric */}
+                          {ocpRateMetric !== 'GPU' && (
+                            <>
+                              <FormGroup label="Calculation type" fieldId="calculation">
+                                <Radio
+                                  id="calculation-infra"
+                                  name="calculation"
+                                  label="Infrastructure"
+                                  isChecked={ocpRateCalculationType === 'infrastructure'}
+                                  onChange={() => setOcpRateCalculationType('infrastructure')}
+                                />
+                                <Radio
+                                  id="calculation-suppl"
+                                  name="calculation"
+                                  label="Supplementary"
+                                  isChecked={ocpRateCalculationType === 'supplementary'}
+                                  onChange={() => setOcpRateCalculationType('supplementary')}
+                                  style={{ marginLeft: '16px' }}
+                                />
+                              </FormGroup>
+
+                              <Checkbox
+                                id="enter-rate-by-tag"
+                                label="Enter rate by tag"
+                                isChecked={ocpRateByTag}
+                                onChange={(_event, checked) => setOcpRateByTag(checked)}
+                              />
+                            </>
+                          )}
+
+                          {ocpRateByTag && ocpRateMetric !== 'GPU' && (
                             <>
                               <FormGroup label="Filter by tag key" isRequired fieldId="tag-key" style={{ width: '360px' }}>
                                 <TextInput
@@ -2905,6 +3227,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                     calculationType: ocpRateCalculationType,
                                     tagKey: ocpRateTagKey,
                                     tagValues: ocpRateTagValues,
+                                    gpuModels: ocpRateMetric === 'GPU' ? gpuModels : undefined,
                                   };
                                   setOcpPriceListRates([...ocpPriceListRates, newRate]);
                                   setOcpShowCreateRate(false);
@@ -2912,6 +3235,8 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                   setOcpRateTagKey('');
                                   setOcpRateTagValues([{ value: '', rate: '', description: '', isDefault: false }]);
                                   setOcpRateByTag(false);
+                                  // Reset GPU models
+                                  setGpuModels([{vendor: 'Nvidia', model: '', rate: '', description: ''}]);
                                 }}
                               >
                                 Create rate
@@ -3060,11 +3385,11 @@ const CostManagementSettings: React.FunctionComponent = () => {
 
                   <StackItem>
                     <Form>
-                      <FormGroup>
+                      <FormGroup style={{ display: 'flex', gap: '16px' }}>
                         <Radio
                           id="cpu-distribution"
                           name="distribution-type"
-                          label="CPU"
+                          label="CPU usage"
                           value="cpu"
                           isChecked={ocpDistributionType === 'cpu'}
                           onChange={() => setOcpDistributionType('cpu')}
@@ -3072,11 +3397,10 @@ const CostManagementSettings: React.FunctionComponent = () => {
                         <Radio
                           id="memory-distribution"
                           name="distribution-type"
-                          label="Memory"
+                          label="Memory usage"
                           value="memory"
                           isChecked={ocpDistributionType === 'memory'}
                           onChange={() => setOcpDistributionType('memory')}
-                          style={{ marginLeft: '16px' }}
                         />
                       </FormGroup>
                     </Form>
@@ -3084,7 +3408,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
 
                   <StackItem>
                     <Title headingLevel="h3" size="md">
-                      Distribute these costs to projects, based on the above description type
+                      Distribute these costs to pods
                     </Title>
                   </StackItem>
 
@@ -3093,10 +3417,10 @@ const CostManagementSettings: React.FunctionComponent = () => {
                       <FormGroup>
                         <Checkbox
                           id="distribute-platform"
-                          label="Platform overhead (OpenShift services)"
+                          label="Platform overhead (OpenShift services and platform projects)"
                           isChecked={ocpDistributePlatform}
                           onChange={(_event, checked) => setOcpDistributePlatform(checked)}
-                          aria-label="Platform overhead (OpenShift services)"
+                          aria-label="Platform overhead (OpenShift services and platform projects)"
                         />
                         <Checkbox
                           id="distribute-worker"
@@ -3107,17 +3431,24 @@ const CostManagementSettings: React.FunctionComponent = () => {
                         />
                         <Checkbox
                           id="distribute-network"
-                          label="Network traffic"
+                          label="Network unattributed"
                           isChecked={ocpDistributeNetwork}
                           onChange={(_event, checked) => setOcpDistributeNetwork(checked)}
-                          aria-label="Network traffic"
+                          aria-label="Network unattributed"
                         />
                         <Checkbox
                           id="distribute-storage"
-                          label="Storage"
+                          label="Storage unattributed"
                           isChecked={ocpDistributeStorage}
                           onChange={(_event, checked) => setOcpDistributeStorage(checked)}
-                          aria-label="Storage"
+                          aria-label="Storage unattributed"
+                        />
+                        <Checkbox
+                          id="distribute-gpu"
+                          label="GPU unallocated (distributed based on GPU usage)"
+                          isChecked={ocpDistributeGpu}
+                          onChange={(_event, checked) => setOcpDistributeGpu(checked)}
+                          aria-label="GPU unallocated (distributed based on GPU usage)"
                         />
                       </FormGroup>
                     </Form>
@@ -3254,6 +3585,13 @@ const CostManagementSettings: React.FunctionComponent = () => {
             <WizardStep
                 name="Review details"
                 id="ocp-review-step"
+                footer={{
+                  nextButtonText: 'Create',
+                  onNext: () => {
+                    setWizardComplete(true);
+                    return Promise.resolve();
+                  }
+                }}
               >
                 <Stack hasGutter>
                   <StackItem>
@@ -3297,49 +3635,76 @@ const CostManagementSettings: React.FunctionComponent = () => {
                                       <Td>{rate.metric}</Td>
                                       <Td>{rate.description}</Td>
                                       <Td>{rate.measurement}</Td>
-                                      <Td>{rate.calculationType}</Td>
+                                      <Td>{rate.calculationType || 'Supplementary'}</Td>
                                       <Td>
-                                        <Button
-                                          variant="link"
-                                          onClick={() => {
-                                            const newExpanded = new Set(ocpExpandedRates);
-                                            if (ocpExpandedRates.has(index)) {
-                                              newExpanded.delete(index);
-                                            } else {
-                                              newExpanded.add(index);
-                                            }
-                                            setOcpExpandedRates(newExpanded);
-                                          }}
-                                        >
-                                          Various
-                                        </Button>
+                                        {rate.metric === 'GPU' || rate.tagKey ? (
+                                          <Button
+                                            variant="link"
+                                            onClick={() => {
+                                              const newExpanded = new Set(ocpExpandedRates);
+                                              if (ocpExpandedRates.has(index)) {
+                                                newExpanded.delete(index);
+                                              } else {
+                                                newExpanded.add(index);
+                                              }
+                                              setOcpExpandedRates(newExpanded);
+                                            }}
+                                          >
+                                            Various
+                                          </Button>
+                                        ) : (
+                                          '-'
+                                        )}
                                       </Td>
                                     </Tr>
                                     {ocpExpandedRates.has(index) && (
                                       <Tr isExpanded>
                                         <Td colSpan={6}>
-                                          <Table variant="compact" borders={false}>
-                                            <Thead>
-                                              <Tr>
-                                                <Th>Tag key</Th>
-                                                <Th>Tag value</Th>
-                                                <Th>Rate</Th>
-                                                <Th>Description</Th>
-                                                <Th>Default</Th>
-                                              </Tr>
-                                            </Thead>
-                                            <Tbody>
-                                              {rate.tagValues.map((tv: any, tvIndex: number) => (
-                                                <Tr key={tvIndex}>
-                                                  <Td>{rate.tagKey}</Td>
-                                                  <Td>{tv.value}</Td>
-                                                  <Td>${tv.rate}</Td>
-                                                  <Td>{tv.description}</Td>
-                                                  <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                          {rate.metric === 'GPU' && rate.gpuModels ? (
+                                            <Table variant="compact" borders={false}>
+                                              <Thead>
+                                                <Tr>
+                                                  <Th>Vendor</Th>
+                                                  <Th>Model</Th>
+                                                  <Th>Description</Th>
+                                                  <Th>Rate</Th>
                                                 </Tr>
-                                              ))}
-                                            </Tbody>
-                                          </Table>
+                                              </Thead>
+                                              <Tbody>
+                                                {rate.gpuModels.map((gpu: any, gpuIndex: number) => (
+                                                  <Tr key={gpuIndex}>
+                                                    <Td>{gpu.vendor}</Td>
+                                                    <Td>{gpu.model}</Td>
+                                                    <Td>{gpu.description}</Td>
+                                                    <Td>{gpu.rate}</Td>
+                                                  </Tr>
+                                                ))}
+                                              </Tbody>
+                                            </Table>
+                                          ) : (
+                                            <Table variant="compact" borders={false}>
+                                              <Thead>
+                                                <Tr>
+                                                  <Th>Tag key</Th>
+                                                  <Th>Tag value</Th>
+                                                  <Th>Rate</Th>
+                                                  <Th>Description</Th>
+                                                  <Th>Default</Th>
+                                                </Tr>
+                                              </Thead>
+                                              <Tbody>
+                                                {rate.tagValues.map((tv: any, tvIndex: number) => (
+                                                  <Tr key={tvIndex}>
+                                                    <Td>{rate.tagKey}</Td>
+                                                    <Td>{tv.value}</Td>
+                                                    <Td>${tv.rate}</Td>
+                                                    <Td>{tv.description}</Td>
+                                                    <Td>{tv.isDefault ? 'Yes' : 'No'}</Td>
+                                                  </Tr>
+                                                ))}
+                                              </Tbody>
+                                            </Table>
+                                          )}
                                         </Td>
                                       </Tr>
                                     )}
@@ -3357,6 +3722,7 @@ const CostManagementSettings: React.FunctionComponent = () => {
                         {ocpDistributeWorker && <dd>Distribute worker unallocated capacity</dd>}
                         {ocpDistributeNetwork && <dd>Distribute network costs</dd>}
                         {ocpDistributeStorage && <dd>Distribute storage costs</dd>}
+                        {ocpDistributeGpu && <dd>Distribute GPU unallocated costs</dd>}
                         <dt>Assign integrations</dt>
                         <dd>
                           {wizardSelectedIntegrations.length > 0
@@ -3372,7 +3738,148 @@ const CostManagementSettings: React.FunctionComponent = () => {
                 </Stack>
               </WizardStep>
           )}
+
+          {/* Success screen - OCP - REMOVED, now shown in Review step */}
+          {false && wizardIntegration === 'OpenShift Container Platform' && (
+            <WizardStep
+              name="Success"
+              id="ocp-success-step"
+            >
+              {wizardComplete && (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: '60vh',
+                  textAlign: 'center',
+                  padding: '20px'
+                }}>
+                  <CheckCircleIcon 
+                    style={{ 
+                      fontSize: '64px', 
+                      color: 'var(--pf-t--global--icon--color--status--success--default)', 
+                      marginBottom: '24px' 
+                    }} 
+                  />
+                  <Title headingLevel="h2" size="xl" style={{ marginBottom: '16px' }}>
+                    Creation successful
+                  </Title>
+                  <p style={{ 
+                    color: 'var(--pf-t--global--text--color--regular)', 
+                    marginBottom: '32px',
+                    maxWidth: '600px'
+                  }}>
+                    Costs for resources connected to the assigned integrations will now be calculated using the newly created "{wizardName}" cost model.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                    <Button 
+                      variant="primary"
+                      onClick={() => {
+                        resetWizardState();
+                        setIsWizardOpen(false);
+                        setWizardComplete(false);
+                      }}
+                    >
+                      Open cost model details
+                    </Button>
+                    <Button 
+                      variant="link"
+                      onClick={() => {
+                        resetWizardState();
+                        setWizardComplete(false);
+                      }}
+                    >
+                      Add another cost model
+                    </Button>
+                    <Button 
+                      variant="link"
+                      onClick={() => {
+                        resetWizardState();
+                        setIsWizardOpen(false);
+                        setWizardComplete(false);
+                      }}
+                      style={{ marginTop: '8px' }}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </WizardStep>
+          )}
+
+          {/* Success screen - AWS */}
+          {wizardIntegration === 'Amazon Web Services' && (
+            <WizardStep
+              name="Success"
+              id="aws-success-step"
+            >
+              {wizardComplete && (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: '60vh',
+                  textAlign: 'center',
+                  padding: '20px'
+                }}>
+                  <CheckCircleIcon 
+                  style={{ 
+                    fontSize: '64px', 
+                    color: 'var(--pf-t--global--icon--color--status--success--default)', 
+                    marginBottom: '24px' 
+                  }} 
+                />
+                <Title headingLevel="h2" size="xl" style={{ marginBottom: '16px' }}>
+                  Creation successful
+                </Title>
+                <p style={{ 
+                  color: 'var(--pf-t--global--text--color--regular)', 
+                  marginBottom: '32px',
+                  maxWidth: '600px'
+                }}>
+                  Costs for resources connected to the assigned integrations will now be calculated using the newly created "{wizardName}" cost model.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                  <Button 
+                    variant="primary"
+                    onClick={() => {
+                      resetWizardState();
+                      setIsWizardOpen(false);
+                      setWizardComplete(false);
+                    }}
+                  >
+                    Open cost model details
+                  </Button>
+                  <Button 
+                    variant="link"
+                    onClick={() => {
+                      resetWizardState();
+                      setWizardComplete(false);
+                    }}
+                  >
+                    Add another cost model
+                  </Button>
+                  <Button 
+                    variant="link"
+                    onClick={() => {
+                      resetWizardState();
+                      setIsWizardOpen(false);
+                      setWizardComplete(false);
+                    }}
+                    style={{ marginTop: '8px' }}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+              )}
+            </WizardStep>
+          )}
         </Wizard>
+        )}
       </Modal>
     </>
   );
