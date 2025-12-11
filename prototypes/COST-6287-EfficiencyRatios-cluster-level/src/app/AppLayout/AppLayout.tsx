@@ -30,7 +30,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
   
   // Detect if running locally or on GitHub Pages
   const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const boardUrl = isDev ? '../../../index.html' : '/Cost-Management-Prototype/';
+  const boardUrl = isDev ? 'http://localhost:8080/' : '/Cost-Management-Prototype/';
 
   const prototypeBanner = (
     <div style={{

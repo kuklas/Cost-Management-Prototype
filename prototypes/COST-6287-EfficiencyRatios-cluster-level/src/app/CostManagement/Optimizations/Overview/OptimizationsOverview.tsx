@@ -14,6 +14,7 @@ import {
   SelectOption,
   SelectList,
   MenuToggle,
+  MenuToggleElement,
   Tabs,
   Tab,
   TabTitleText,
@@ -36,6 +37,9 @@ import {
   DropdownList,
   DropdownItem,
   Divider,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td, ThProps } from '@patternfly/react-table';
 import { 
@@ -43,6 +47,7 @@ import {
   FilterIcon, 
   ExportIcon,
   SortAmountDownIcon,
+  TimesIcon,
   SortAmountUpIcon,
   EyeSlashIcon,
   EyeIcon,
@@ -71,8 +76,14 @@ interface OptimizationItem {
 
 const OptimizationsOverview: React.FunctionComponent = () => {
   const [activeTabKey, setActiveTabKey] = React.useState<string | number>(0);
-  const [clusterSelectOpen, setClusterSelectOpen] = React.useState(false);
+  
+  // Group by state
+  const [groupByOpen, setGroupByOpen] = React.useState(false);
+  const [groupBy, setGroupBy] = React.useState<'cluster' | 'project'>('cluster');
+  const [groupBySelectionOpen, setGroupBySelectionOpen] = React.useState(false);
   const [selectedCluster, setSelectedCluster] = React.useState('all');
+  const [selectedProject, setSelectedProject] = React.useState('all');
+  const [groupBySearchValue, setGroupBySearchValue] = React.useState('');
   
   // Time range for Optimizations tab (table view)
   const [timeRangeOpen, setTimeRangeOpen] = React.useState(false);
@@ -96,6 +107,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
 
   // Timeline view state - global for all cards
   const [timelineView, setTimelineView] = React.useState('current');
+  const [timeRangeSelectOpen, setTimeRangeSelectOpen] = React.useState(false);
 
   // Hover state for timeline charts
   const [hoveredPoints, setHoveredPoints] = React.useState<{
@@ -224,9 +236,9 @@ const OptimizationsOverview: React.FunctionComponent = () => {
       name: 'production-east',
       requestedCapacity: 2000,
       usage: 1100,
-      idle: 900, // High waste!
+      idle: 900,
       totalClusterSpend: 120000,
-      workerUnallocatedSpend: 25000, // High unallocated!
+      workerUnallocatedSpend: 25000,
       overheadCapacityCost: 15000,
       totalCapacityCost: 100000,
     },
@@ -243,19 +255,88 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     }
   ];
 
-  // Calculate aggregates or get single cluster data
-  const clusterData = selectedCluster === 'all' 
-    ? {
-        name: 'All clusters',
-        requestedCapacity: allClustersData.reduce((sum, c) => sum + c.requestedCapacity, 0),
-        usage: allClustersData.reduce((sum, c) => sum + c.usage, 0),
-        idle: allClustersData.reduce((sum, c) => sum + c.idle, 0),
-        totalClusterSpend: allClustersData.reduce((sum, c) => sum + c.totalClusterSpend, 0),
-        workerUnallocatedSpend: allClustersData.reduce((sum, c) => sum + c.workerUnallocatedSpend, 0),
-        overheadCapacityCost: allClustersData.reduce((sum, c) => sum + c.overheadCapacityCost, 0),
-        totalCapacityCost: allClustersData.reduce((sum, c) => sum + c.totalCapacityCost, 0),
+  // Mock project data
+  const allProjectsData = [
+    {
+      id: 'thanos',
+      name: 'thanos',
+      requestedCapacity: 800,
+      usage: 600,
+      idle: 200,
+      totalClusterSpend: 35000,
+      workerUnallocatedSpend: 5000,
+      overheadCapacityCost: 3500,
+      totalCapacityCost: 32000,
+    },
+    {
+      id: 'cost-management',
+      name: 'cost-management',
+      requestedCapacity: 1200,
+      usage: 900,
+      idle: 300,
+      totalClusterSpend: 55000,
+      workerUnallocatedSpend: 8000,
+      overheadCapacityCost: 5500,
+      totalCapacityCost: 50000,
+    },
+    {
+      id: 'monitoring',
+      name: 'monitoring',
+      requestedCapacity: 600,
+      usage: 450,
+      idle: 150,
+      totalClusterSpend: 28000,
+      workerUnallocatedSpend: 4000,
+      overheadCapacityCost: 2800,
+      totalCapacityCost: 25000,
+    },
+    {
+      id: 'logging',
+      name: 'logging',
+      requestedCapacity: 900,
+      usage: 1000,
+      idle: -100, // Over-utilized
+      totalClusterSpend: 42000,
+      workerUnallocatedSpend: 6000,
+      overheadCapacityCost: 4200,
+      totalCapacityCost: 38000,
+    }
+  ];
+
+  // Get current data based on grouping selection
+  const getCurrentData = () => {
+    if (groupBy === 'cluster') {
+      if (selectedCluster === 'all') {
+        return {
+          name: 'All clusters',
+          requestedCapacity: allClustersData.reduce((sum, c) => sum + c.requestedCapacity, 0),
+          usage: allClustersData.reduce((sum, c) => sum + c.usage, 0),
+          idle: allClustersData.reduce((sum, c) => sum + c.idle, 0),
+          totalClusterSpend: allClustersData.reduce((sum, c) => sum + c.totalClusterSpend, 0),
+          workerUnallocatedSpend: allClustersData.reduce((sum, c) => sum + c.workerUnallocatedSpend, 0),
+          overheadCapacityCost: allClustersData.reduce((sum, c) => sum + c.overheadCapacityCost, 0),
+          totalCapacityCost: allClustersData.reduce((sum, c) => sum + c.totalCapacityCost, 0),
+        };
       }
-    : allClustersData.find(c => c.id === selectedCluster) || allClustersData[0];
+      return allClustersData.find(c => c.id === selectedCluster) || allClustersData[0];
+    } else {
+      if (selectedProject === 'all') {
+        return {
+          name: 'All projects',
+          requestedCapacity: allProjectsData.reduce((sum, p) => sum + p.requestedCapacity, 0),
+          usage: allProjectsData.reduce((sum, p) => sum + p.usage, 0),
+          idle: allProjectsData.reduce((sum, p) => sum + p.idle, 0),
+          totalClusterSpend: allProjectsData.reduce((sum, p) => sum + p.totalClusterSpend, 0),
+          workerUnallocatedSpend: allProjectsData.reduce((sum, p) => sum + p.workerUnallocatedSpend, 0),
+          overheadCapacityCost: allProjectsData.reduce((sum, p) => sum + p.overheadCapacityCost, 0),
+          totalCapacityCost: allProjectsData.reduce((sum, p) => sum + p.totalCapacityCost, 0),
+        };
+      }
+      return allProjectsData.find(p => p.id === selectedProject) || allProjectsData[0];
+    }
+  };
+
+  const clusterData = getCurrentData();
 
   // Calculate efficiency for each cluster to find worst performers
   const clusterEfficiencies = allClustersData.map(cluster => ({
@@ -266,12 +347,24 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     overheadEff: Math.round(((cluster.totalCapacityCost - cluster.overheadCapacityCost) / cluster.totalCapacityCost) * 100),
   }));
 
-  // Find worst performing clusters for each metric (sorted by worst first)
+  // Calculate efficiency for each project to find worst performers
+  const projectEfficiencies = allProjectsData.map(project => ({
+    ...project,
+    usageEff: Math.round(((project.requestedCapacity - project.idle) / project.requestedCapacity) * 100),
+    wasteScore: Math.round((project.idle / project.requestedCapacity) * 100),
+    costEff: Math.round(((project.totalClusterSpend - project.workerUnallocatedSpend) / project.totalClusterSpend) * 100),
+    overheadEff: Math.round(((project.totalCapacityCost - project.overheadCapacityCost) / project.totalCapacityCost) * 100),
+  }));
+
+  // Get the current efficiencies based on grouping
+  const currentEfficiencies = groupBy === 'cluster' ? clusterEfficiencies : projectEfficiencies;
+
+  // Find worst performing items for each metric (sorted by worst first)
   const worstClusters = {
-    usage: [...clusterEfficiencies].sort((a, b) => a.usageEff - b.usageEff),
-    waste: [...clusterEfficiencies].sort((a, b) => b.wasteScore - a.wasteScore),
-    cost: [...clusterEfficiencies].sort((a, b) => a.costEff - b.costEff),
-    overhead: [...clusterEfficiencies].sort((a, b) => a.overheadEff - b.overheadEff),
+    usage: [...currentEfficiencies].sort((a, b) => a.usageEff - b.usageEff),
+    waste: [...currentEfficiencies].sort((a, b) => b.wasteScore - a.wasteScore),
+    cost: [...currentEfficiencies].sort((a, b) => a.costEff - b.costEff),
+    overhead: [...currentEfficiencies].sort((a, b) => a.overheadEff - b.overheadEff),
   };
 
   // Calculate efficiency scores based on formulas from COST-6287
@@ -404,34 +497,51 @@ const OptimizationsOverview: React.FunctionComponent = () => {
       return x - Math.floor(x);
     };
 
+    // Determine date range based on selection
+    const now = new Date();
     switch (timelineRange) {
-      case '4weeks':
-        numPoints = 28; // Daily data for 4 weeks
-        startDate.setDate(startDate.getDate() - 28);
+      case 'month-to-date':
+        numPoints = now.getDate(); // Days in current month so far
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         break;
-      case '12weeks':
-        numPoints = 12; // Weekly data for 12 weeks
-        startDate.setDate(startDate.getDate() - 84);
+      case 'previous-month':
+        numPoints = new Date(now.getFullYear(), now.getMonth(), 0).getDate(); // Days in previous month
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         break;
-      case '6months':
-        numPoints = 26; // Bi-weekly data for 6 months
-        startDate.setMonth(startDate.getMonth() - 6);
+      case 'previous-and-month-to-date':
+        numPoints = new Date(now.getFullYear(), now.getMonth(), 0).getDate() + now.getDate(); // Previous month + current month to date
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        break;
+      case 'last-30-days':
+        numPoints = 30;
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case 'last-60-days':
+        numPoints = 60;
+        startDate.setDate(startDate.getDate() - 60);
+        break;
+      case 'last-90-days':
+        numPoints = 90;
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case 'custom':
+      default:
+        numPoints = 30; // Default to 30 days
+        startDate.setDate(startDate.getDate() - 30);
         break;
     }
 
+    // Limit data points for readability (max ~30 points)
+    const step = Math.max(1, Math.floor(numPoints / 30));
+    const actualPoints = Math.ceil(numPoints / step);
+
     // Generate trend with some randomness
     const startValue = currentValue - (seededRandom(seed) * 20 - 10); // Start within ±10 of current
-    const trend = (currentValue - startValue) / numPoints; // Linear trend towards current value
+    const trend = (currentValue - startValue) / actualPoints; // Linear trend towards current value
 
-    for (let i = 0; i < numPoints; i++) {
+    for (let i = 0; i < actualPoints; i++) {
       const date = new Date(startDate);
-      if (timelineRange === '4weeks') {
-        date.setDate(date.getDate() + i);
-      } else if (timelineRange === '12weeks') {
-        date.setDate(date.getDate() + (i * 7));
-      } else {
-        date.setDate(date.getDate() + (i * 14));
-      }
+      date.setDate(date.getDate() + (i * step));
 
       // Random time for each point using seed
       const randomHour = Math.floor(seededRandom(seed + i) * 24);
@@ -450,33 +560,31 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     }
 
     // Ensure last point is the current value with current time
-    const now = new Date();
+    const currentTime = new Date();
     dataPoints.push({
-      date: now.toISOString().split('T')[0],
-      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: currentTime.toISOString().split('T')[0],
+      time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
       value: currentValue
     });
 
     return dataPoints;
   };
 
-  // Calculate gauge colors based on value and direction
-  const getGaugeColor = (value: number, betterDirection: string) => {
-    // For "lower is better" metrics, invert the logic
-    const effectiveValue = betterDirection === 'lower' ? (100 - value) : value;
-    
-    if (effectiveValue < 50) return '#C9190B'; // Red
-    if (effectiveValue < 70) return '#F0AB00'; // Yellow/Orange
-    return '#3E8635'; // Green
+  // Calculate gauge colors based on value - optimal range is 80-120%
+  const getGaugeColor = (value: number) => {
+    if (value < 60) return '#C9190B'; // Red - severely under-utilized
+    if (value < 80) return '#F0AB00'; // Orange - under-utilized
+    if (value <= 120) return '#3E8635'; // Green - optimal
+    if (value <= 160) return '#F0AB00'; // Orange - over-utilized
+    return '#C9190B'; // Red - severely over-utilized
   };
 
-  const getGaugeStatus = (value: number, betterDirection: string) => {
-    // For "lower is better" metrics, invert the logic
-    const effectiveValue = betterDirection === 'lower' ? (100 - value) : value;
-    
-    if (effectiveValue < 50) return 'Action required';
-    if (effectiveValue < 70) return 'Adequate';
-    return 'Optimal';
+  const getGaugeStatus = (value: number) => {
+    if (value < 60) return 'Under-utilized';
+    if (value < 80) return 'Below optimal';
+    if (value <= 120) return 'Optimal';
+    if (value <= 160) return 'Above optimal';
+    return 'Over-utilized';
   };
 
   // Render timeline chart view (Garmin-style)
@@ -581,85 +689,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
     const displayTime = hoveredPoint ? hoveredPoint.time : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
     return (
-      <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-        {/* Main content */}
-        <FlexItem>
-          <Grid hasGutter>
-            {/* Left side: Score display */}
-            <GridItem span={4}>
-              <Flex direction={{ default: 'column' }} justifyContent={{ default: 'justifyContentCenter' }} style={{ height: '100%', paddingLeft: '1rem' }}>
-                <FlexItem>
-                  <div style={{ fontSize: '48px', fontWeight: 300, color: '#151515', lineHeight: 1 }}>
-                    {displayValue}%
-                  </div>
-                </FlexItem>
-                
-                {/* Status label */}
-                <FlexItem style={{ marginTop: '0.5rem' }}>
-                  <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
-                    <div style={{ 
-                      color: getGaugeColor(displayValue, efficiency.betterDirection),
-                      fontWeight: 600 
-                    }}>
-                      {getGaugeStatus(displayValue, efficiency.betterDirection)}
-                    </div>
-                    <div style={{ 
-                      color: '#6a6e73',
-                      fontSize: '11px'
-                    }}>
-                      (Target: {efficiency.betterDirection === 'higher' ? '80-100%' : '0-20%'})
-                    </div>
-                  </div>
-                </FlexItem>
-
-                {hoveredPoint ? (
-                  // Show date and time when hovering
-                  <>
-                    <FlexItem style={{ marginTop: '0.5rem' }}>
-                      <span style={{ fontSize: '13px', color: '#6a6e73' }}>
-                        {formatDate(displayDate)}
-                      </span>
-                    </FlexItem>
-                    <FlexItem style={{ marginTop: '0.25rem' }}>
-                      <span style={{ fontSize: '13px', color: '#6a6e73' }}>
-                        {displayTime}
-                      </span>
-                    </FlexItem>
-                  </>
-                ) : (
-                  // Show trend comparison when not hovering
-                  <>
-                    <FlexItem style={{ marginTop: '0.5rem' }}>
-                      <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
-                        <FlexItem>
-                          <span style={{ 
-                            fontSize: '14px', 
-                            color: isGoodChange ? '#3E8635' : '#C9190B',
-                            fontWeight: 600
-                          }}>
-                            {isPositiveChange ? '↑' : '↓'} {Math.abs(changeValue)}%
-                          </span>
-                        </FlexItem>
-                        <FlexItem>
-                          <span style={{ fontSize: '13px', color: '#6a6e73' }}>
-                            ({isPositiveChange ? '+' : ''}{changePercent}%)
-                          </span>
-                        </FlexItem>
-                      </Flex>
-                    </FlexItem>
-                    <FlexItem style={{ marginTop: '0.25rem' }}>
-                      <span style={{ fontSize: '12px', color: '#6a6e73' }}>
-                        from {formatDate(historicalData[0].date)}
-                      </span>
-                    </FlexItem>
-                  </>
-                )}
-              </Flex>
-            </GridItem>
-
-            {/* Right side: Sparkline chart */}
-            <GridItem span={8}>
-              <div style={{ padding: '1rem 0', position: 'relative' }}>
+      <div style={{ padding: '1rem 0', position: 'relative' }}>
                 <svg width={chartWidth} height={chartHeight}>
                   {/* Target range background */}
                   <rect
@@ -743,10 +773,10 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                     onMouseLeave={handleChartMouseLeave}
                   />
 
-                  {/* Y-axis labels */}
-                  <text x={padding.left - 10} y={yScale(100)} fontSize="11" fill="#6a6e73" textAnchor="end" dominantBaseline="middle">0%</text>
+                  {/* Y-axis labels - 100% at top, 0% at bottom */}
+                  <text x={padding.left - 10} y={yScale(100)} fontSize="11" fill="#6a6e73" textAnchor="end" dominantBaseline="middle">100%</text>
                   <text x={padding.left - 10} y={yScale(50)} fontSize="11" fill="#6a6e73" textAnchor="end" dominantBaseline="middle">50%</text>
-                  <text x={padding.left - 10} y={yScale(0)} fontSize="11" fill="#6a6e73" textAnchor="end" dominantBaseline="middle">100%</text>
+                  <text x={padding.left - 10} y={yScale(0)} fontSize="11" fill="#6a6e73" textAnchor="end" dominantBaseline="middle">0%</text>
 
                   {/* X-axis labels */}
                   <text x={padding.left} y={chartHeight - 5} fontSize="11" fill="#6a6e73" textAnchor="start">
@@ -777,12 +807,12 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                   }}>
                     <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '6px' }}>{hoveredPoint.value}%</div>
                     <div style={{ 
-                      color: getGaugeColor(hoveredPoint.value, efficiency.betterDirection),
+                      color: getGaugeColor(hoveredPoint.value),
                       fontWeight: 600,
                       marginBottom: '6px',
                       fontSize: '13px'
                     }}>
-                      {getGaugeStatus(hoveredPoint.value, efficiency.betterDirection)}
+                      {getGaugeStatus(hoveredPoint.value)}
                     </div>
                     <div style={{ fontSize: '11px', color: '#d2d2d2' }}>
                       {formatDate(hoveredPoint.date)} {hoveredPoint.time}
@@ -790,17 +820,14 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                   </div>
                 )}
               </div>
-            </GridItem>
-          </Grid>
-        </FlexItem>
-      </Flex>
     );
   };
 
   const renderGauge = (efficiency: any, formulaKey: 'usage' | 'waste' | 'cost' | 'overhead', recommendations: { short: string[]; detailed: string[] }, worstClustersList?: any[]) => {
     const percentage = efficiency.value;
-    const rotation = (percentage / 100) * 180; // 180 degrees for semicircle
-    const color = getGaugeColor(percentage, efficiency.betterDirection);
+    // Scale is 0-200%, so needle rotation = (value / 200) * 180 degrees
+    const rotation = Math.min((percentage / 200) * 180, 180); // Cap at 180 degrees (200%)
+    const color = getGaugeColor(percentage);
     const showRecs = showRecommendations[formulaKey];
     const showAll = showAllFactors[formulaKey];
 
@@ -961,58 +988,43 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                     <FlexItem style={{ textAlign: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ position: 'relative', width: '200px', height: '120px' }}>
-                          {/* Background arc */}
+                          {/* Background arc - 0-200% scale with green in middle */}
                           <svg width="200" height="120" style={{ position: 'absolute', top: 0, left: 0 }}>
-                            {/* Three colored segments aligned with targets */}
-                            {efficiency.betterDirection === 'higher' ? (
-                              <>
-                                {/* Red segment (0-60%) */}
-                                <path
-                                  d="M 20 100 A 80 80 0 0 1 124.7 23.9"
-                                  fill="none"
-                                  stroke="#C9190B"
-                                  strokeWidth="14"
-                                />
-                                {/* Orange segment (60-80%) */}
-                                <path
-                                  d="M 124.7 23.9 A 80 80 0 0 1 164.7 53"
-                                  fill="none"
-                                  stroke="#F0AB00"
-                                  strokeWidth="14"
-                                />
-                                {/* Green segment (80-100%) */}
-                                <path
-                                  d="M 164.7 53 A 80 80 0 0 1 180 100"
-                                  fill="none"
-                                  stroke="#3E8635"
-                                  strokeWidth="14"
-                                />
-                              </>
-                            ) : (
-                              <>
-                                {/* Green segment (0-20%) - Target range */}
-                                <path
-                                  d="M 20 100 A 80 80 0 0 1 35.3 53"
-                                  fill="none"
-                                  stroke="#3E8635"
-                                  strokeWidth="14"
-                                />
-                                {/* Orange segment (20-40%) */}
-                                <path
-                                  d="M 35.3 53 A 80 80 0 0 1 75.3 23.9"
-                                  fill="none"
-                                  stroke="#F0AB00"
-                                  strokeWidth="14"
-                                />
-                                {/* Red segment (40-100%) */}
-                                <path
-                                  d="M 75.3 23.9 A 80 80 0 0 1 180 100"
-                                  fill="none"
-                                  stroke="#C9190B"
-                                  strokeWidth="14"
-                                />
-                              </>
-                            )}
+                            {/* Red segment (0-60%) - Under-utilized */}
+                            <path
+                              d="M 20 100 A 80 80 0 0 1 53 35"
+                              fill="none"
+                              stroke="#C9190B"
+                              strokeWidth="14"
+                            />
+                            {/* Orange segment (60-80%) - Below optimal */}
+                            <path
+                              d="M 53 35 A 80 80 0 0 1 75.3 24"
+                              fill="none"
+                              stroke="#F0AB00"
+                              strokeWidth="14"
+                            />
+                            {/* Green segment (80-120%) - Optimal */}
+                            <path
+                              d="M 75.3 24 A 80 80 0 0 1 124.7 24"
+                              fill="none"
+                              stroke="#3E8635"
+                              strokeWidth="14"
+                            />
+                            {/* Orange segment (120-160%) - Above optimal */}
+                            <path
+                              d="M 124.7 24 A 80 80 0 0 1 147 35"
+                              fill="none"
+                              stroke="#F0AB00"
+                              strokeWidth="14"
+                            />
+                            {/* Red segment (160-200%) - Over-utilized */}
+                            <path
+                              d="M 147 35 A 80 80 0 0 1 180 100"
+                              fill="none"
+                              stroke="#C9190B"
+                              strokeWidth="14"
+                            />
                             {/* Needle */}
                             <line
                               x1="100"
@@ -1048,7 +1060,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                           {/* Status label below gauge dot */}
                           <div style={{ 
                             position: 'absolute',
-                            top: '104px', // 4px below the center dot at y=100
+                            top: '104px',
                             left: '50%',
                             transform: 'translateX(-50%)',
                             textAlign: 'center',
@@ -1060,13 +1072,13 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                               color: color,
                               fontWeight: 600 
                             }}>
-                              {getGaugeStatus(percentage, efficiency.betterDirection)}
+                              {getGaugeStatus(percentage)}
                             </div>
                             <div style={{ 
                               color: '#6a6e73',
                               fontSize: '11px'
                             }}>
-                              (Target: {efficiency.betterDirection === 'higher' ? '80-100%' : '0-20%'})
+                              (Target: 80-120%)
                             </div>
                           </div>
                         </div>
@@ -1089,7 +1101,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                             0%
                           </div>
                           
-                          {/* 100% aligned with arc end */}
+                          {/* 200% aligned with arc end */}
                           <div style={{ 
                             position: 'absolute',
                             right: '8px',
@@ -1097,7 +1109,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                             fontWeight: 600,
                             color: '#151515'
                           }}>
-                            100%
+                            200%
                           </div>
                         </div>
                       </div>
@@ -1108,13 +1120,13 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                 {/* Right side: Top 3 + Recommendations */}
                 <GridItem span={8}>
                   <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-                    {/* Top 3 clusters (only show in Overall view) */}
-                    {selectedCluster === 'all' && worstClustersList && worstClustersList.length > 0 && (
+                    {/* Top 3 clusters/projects (only show in Overall view) */}
+                    {((groupBy === 'cluster' && selectedCluster === 'all') || (groupBy === 'project' && selectedProject === 'all')) && worstClustersList && worstClustersList!.length > 0 && (
                       <FlexItem>
                         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
                           <FlexItem>
                             <div style={{ color: '#151515', marginBottom: '0.5rem', fontSize: '13px', fontWeight: 600 }}>
-                              Top 3 clusters affecting this metric
+                              Top 3 {groupBy === 'cluster' ? 'clusters' : 'projects'} affecting this metric
                             </div>
                           </FlexItem>
                           
@@ -1124,7 +1136,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                               fontSize: '12px',
                               borderBottom: '1px solid #d2d2d2'
                             }}>
-                              {(showAll ? worstClustersList : worstClustersList.slice(0, 3)).map((cluster, index) => (
+                              {(showAll ? worstClustersList! : worstClustersList!.slice(0, 3)).map((cluster, index) => (
                                 <div 
                                   key={cluster.id}
                                   style={{
@@ -1137,7 +1149,7 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                                 >
                                   <span>
                                     <span style={{ color: '#6a6e73', marginRight: '0.5rem', fontSize: '11px' }}>{index + 1}.</span>
-                                    <Link to={`/cost-management/openshift/cluster/${cluster.id}`} style={{ color: '#0066cc', textDecoration: 'none' }}>
+                                    <Link to={groupBy === 'cluster' ? `/cost-management/openshift/cluster/${cluster.id}` : `/cost-management/optimizations/${cluster.id}`} style={{ color: '#0066cc', textDecoration: 'none' }}>
                                       {cluster.name}
                                     </Link>
                                   </span>
@@ -1153,14 +1165,14 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                           </FlexItem>
 
                           {/* See more/less button */}
-                          {worstClustersList.length > 3 && (
+                          {worstClustersList!.length > 3 && (
                             <FlexItem style={{ marginTop: '0.5rem' }}>
                               <Button 
                                 variant="link" 
                                 onClick={toggleFactors}
                                 style={{ padding: 0, fontSize: '12px', color: '#0066cc' }}
                               >
-                                {showAll ? '− Show less' : `+ See ${worstClustersList.length - 3} more`}
+                                {showAll ? '− Show less' : `+ See ${worstClustersList!.length - 3} more`}
                               </Button>
                             </FlexItem>
                           )}
@@ -1211,81 +1223,145 @@ const OptimizationsOverview: React.FunctionComponent = () => {
                 </GridItem>
               </Grid>
               ) : (
-                // Timeline view (Garmin-style) - no recommendations for historical data
-                <div>
-                  {renderTimelineChart(efficiency, formulaKey, timelineView)}
-                  
-                  {/* Top 3 clusters section for timeline view (only in Overall view) */}
-                  {selectedCluster === 'all' && worstClustersList && worstClustersList.length > 0 && (
-                    <div style={{ marginTop: '2rem' }}>
-                    <Grid hasGutter>
-                      <GridItem span={12}>
-                        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                          {/* Top 3 clusters (only show in Overall view) */}
-                          {selectedCluster === 'all' && worstClustersList && worstClustersList.length > 0 && (
-                            <FlexItem>
-                              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                                <FlexItem>
-                                  <div style={{ color: '#151515', marginBottom: '0.5rem', fontSize: '13px', fontWeight: 600 }}>
-                                    Top 3 clusters affecting this metric
-                                  </div>
-                                </FlexItem>
-                                
-                                {/* Compact table-like structure */}
-                                <FlexItem>
-                                  <div style={{ 
-                                    fontSize: '12px',
-                                    borderBottom: '1px solid #d2d2d2'
-                                  }}>
-                                    {(showAll ? worstClustersList : worstClustersList.slice(0, 3)).map((cluster, index) => (
-                                      <div 
-                                        key={cluster.id}
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          padding: '0.5rem 0',
-                                          borderTop: index === 0 ? 'none' : '1px solid #f0f0f0'
-                                        }}
-                                      >
-                                        <span>
-                                          <span style={{ color: '#6a6e73', marginRight: '0.5rem', fontSize: '11px' }}>{index + 1}.</span>
-                                          <Link to={`/cost-management/openshift/cluster/${cluster.id}`} style={{ color: '#0066cc', textDecoration: 'none' }}>
-                                            {cluster.name}
-                                          </Link>
-                                        </span>
-                                        <span style={{ fontWeight: 600, color: '#151515' }}>
-                                          {formulaKey === 'usage' ? cluster.usageEff : 
-                                           formulaKey === 'waste' ? cluster.wasteScore :
-                                           formulaKey === 'cost' ? cluster.costEff :
-                                           cluster.overheadEff}%
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </FlexItem>
+                // Timeline view (Garmin-style) - with gauge and chart
+                <Grid hasGutter>
+                  {/* Left side: Gauge Chart (same as current view) */}
+                  <GridItem span={4}>
+                    <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsCenter' }} justifyContent={{ default: 'justifyContentCenter' }} style={{ height: '100%' }}>
+                      <FlexItem style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{ position: 'relative', width: '200px', height: '120px' }}>
+                            {/* Background arc */}
+                            <svg width="200" height="120" style={{ position: 'absolute', top: 0, left: 0 }}>
+                              {/* Red segment (0-60%) - Under-utilized */}
+                              <path
+                                d="M 20 100 A 80 80 0 0 1 53 35"
+                                fill="none"
+                                stroke="#C9190B"
+                                strokeWidth="14"
+                              />
+                              {/* Orange segment (60-80%) - Below optimal */}
+                              <path
+                                d="M 53 35 A 80 80 0 0 1 75.3 24"
+                                fill="none"
+                                stroke="#F0AB00"
+                                strokeWidth="14"
+                              />
+                              {/* Green segment (80-120%) - Optimal */}
+                              <path
+                                d="M 75.3 24 A 80 80 0 0 1 124.7 24"
+                                fill="none"
+                                stroke="#3E8635"
+                                strokeWidth="14"
+                              />
+                              {/* Orange segment (120-160%) - Above optimal */}
+                              <path
+                                d="M 124.7 24 A 80 80 0 0 1 147 35"
+                                fill="none"
+                                stroke="#F0AB00"
+                                strokeWidth="14"
+                              />
+                              {/* Red segment (160-200%) - Over-utilized */}
+                              <path
+                                d="M 147 35 A 80 80 0 0 1 180 100"
+                                fill="none"
+                                stroke="#C9190B"
+                                strokeWidth="14"
+                              />
+                              {/* Needle */}
+                              <line
+                                x1="100"
+                                y1="100"
+                                x2="100"
+                                y2="30"
+                                stroke="#8a8d90"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                style={{
+                                  transformOrigin: '100px 100px',
+                                  transform: `rotate(${rotation - 90}deg)`,
+                                  transition: 'transform 1s ease-out'
+                                }}
+                              />
+                              {/* Center dot */}
+                              <circle cx="100" cy="100" r="3" fill="#8a8d90" />
+                            </svg>
+                            
+                            {/* Center value */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -20%)',
+                              fontSize: '36px',
+                              fontWeight: 300,
+                              color: '#151515'
+                            }}>
+                              {percentage}%
+                            </div>
 
-                                {/* See more/less button */}
-                                {worstClustersList.length > 3 && (
-                                  <FlexItem style={{ marginTop: '0.5rem' }}>
-                                    <Button 
-                                      variant="link" 
-                                      onClick={toggleFactors}
-                                      style={{ padding: 0, fontSize: '12px', color: '#0066cc' }}
-                                    >
-                                      {showAll ? '− Show less' : `+ See ${worstClustersList.length - 3} more`}
-                                    </Button>
-                                  </FlexItem>
-                                )}
-                              </Flex>
-                            </FlexItem>
-                          )}
-                        </Flex>
-                      </GridItem>
-                    </Grid>
-                  </div>
-                  )}
-                </div>
+                            {/* Status label below gauge dot */}
+                            <div style={{ 
+                              position: 'absolute',
+                              top: '104px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              textAlign: 'center',
+                              fontSize: '12px',
+                              lineHeight: '1.3',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              <div style={{ 
+                                color: color,
+                                fontWeight: 600 
+                              }}>
+                                {getGaugeStatus(percentage)}
+                              </div>
+                              <div style={{ 
+                                color: '#6a6e73',
+                                fontSize: '11px'
+                              }}>
+                                (Target: 80-120%)
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Labels below chart */}
+                          <div style={{ 
+                            position: 'relative',
+                            width: '200px',
+                            marginTop: '0.5rem',
+                            height: '20px'
+                          }}>
+                            <div style={{ 
+                              position: 'absolute',
+                              left: '14px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              color: '#151515'
+                            }}>
+                              0%
+                            </div>
+                            <div style={{ 
+                              position: 'absolute',
+                              right: '8px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              color: '#151515'
+                            }}>
+                              200%
+                            </div>
+                          </div>
+                        </div>
+                      </FlexItem>
+                    </Flex>
+                  </GridItem>
+
+                  {/* Right side: Timeline Chart */}
+                  <GridItem span={8}>
+                    {renderTimelineChart(efficiency, formulaKey, timelineView)}
+                  </GridItem>
+                </Grid>
               )}
             </FlexItem>
           </Flex>
@@ -1341,91 +1417,236 @@ const OptimizationsOverview: React.FunctionComponent = () => {
             <Flex alignItems={{ default: 'alignItemsCenter' }} justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ marginBottom: '1rem' }}>
               <FlexItem>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                  {/* Cluster Selector */}
+                  {/* Group by Selector */}
                   <FlexItem>
                     <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
                       <FlexItem>
                         <span style={{ fontSize: '14px', color: '#151515', fontWeight: 600 }}>
-                          Select cluster:
+                          Group by:
                         </span>
                       </FlexItem>
                       <FlexItem>
                         <Select
-                              isOpen={clusterSelectOpen}
-                              onSelect={(_event, value) => {
-                                setSelectedCluster(value as string);
-                                setClusterSelectOpen(false);
-                              }}
-                              onOpenChange={(isOpen) => setClusterSelectOpen(isOpen)}
-                              selected={selectedCluster}
-                              toggle={(toggleRef) => (
-                                <MenuToggle
-                                  ref={toggleRef}
-                                  onClick={() => setClusterSelectOpen(!clusterSelectOpen)}
-                                  isExpanded={clusterSelectOpen}
-                                  style={{ minWidth: '220px' }}
-                                >
-                                  {selectedCluster === 'all' ? 'All clusters (Overall)' : clusterData.name}
-                                </MenuToggle>
-                              )}
+                          isOpen={groupByOpen}
+                          onSelect={(_event, value) => {
+                            setGroupBy(value as 'cluster' | 'project');
+                            setGroupByOpen(false);
+                          }}
+                          onOpenChange={(isOpen) => setGroupByOpen(isOpen)}
+                          selected={groupBy}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() => setGroupByOpen(!groupByOpen)}
+                              isExpanded={groupByOpen}
+                              style={{ minWidth: '120px' }}
                             >
-                              <SelectList>
-                                <SelectOption value="all">All clusters (Overall)</SelectOption>
-                                {allClustersData.map(cluster => (
-                                  <SelectOption key={cluster.id} value={cluster.id}>
-                                    {cluster.name}
-                                  </SelectOption>
-                                ))}
-                              </SelectList>
-                            </Select>
+                              {groupBy === 'cluster' ? 'Cluster' : 'Project'}
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            <SelectOption value="cluster">Cluster</SelectOption>
+                            <SelectOption value="project">Project</SelectOption>
+                          </SelectList>
+                        </Select>
+                      </FlexItem>
+                      <FlexItem>
+                        <Select
+                          isOpen={groupBySelectionOpen}
+                          onSelect={(_event, value) => {
+                            if (groupBy === 'cluster') {
+                              setSelectedCluster(value as string);
+                            } else {
+                              setSelectedProject(value as string);
+                            }
+                            setGroupBySelectionOpen(false);
+                            setGroupBySearchValue('');
+                          }}
+                          onOpenChange={(isOpen) => {
+                            setGroupBySelectionOpen(isOpen);
+                            if (!isOpen) {
+                              setGroupBySearchValue('');
+                            }
+                          }}
+                          selected={groupBy === 'cluster' ? selectedCluster : selectedProject}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              variant="typeahead"
+                              onClick={() => setGroupBySelectionOpen(!groupBySelectionOpen)}
+                              isExpanded={groupBySelectionOpen}
+                              isFullWidth
+                              style={{ minWidth: '250px' }}
+                            >
+                              <TextInputGroup isPlain>
+                                <TextInputGroupMain
+                                  value={groupBySelectionOpen ? groupBySearchValue : (
+                                    groupBy === 'cluster' 
+                                      ? (selectedCluster === 'all' ? 'All clusters' : clusterData.name)
+                                      : (selectedProject === 'all' ? 'All projects' : clusterData.name)
+                                  )}
+                                  onClick={() => setGroupBySelectionOpen(true)}
+                                  onChange={(_event, value) => {
+                                    setGroupBySearchValue(value);
+                                    if (!groupBySelectionOpen) {
+                                      setGroupBySelectionOpen(true);
+                                    }
+                                  }}
+                                  autoComplete="off"
+                                  placeholder={`Search ${groupBy === 'cluster' ? 'clusters' : 'projects'}...`}
+                                />
+                                {groupBySearchValue && (
+                                  <TextInputGroupUtilities>
+                                    <Button
+                                      variant="plain"
+                                      onClick={() => {
+                                        setGroupBySearchValue('');
+                                      }}
+                                      aria-label="Clear search"
+                                    >
+                                      <TimesIcon />
+                                    </Button>
+                                  </TextInputGroupUtilities>
+                                )}
+                              </TextInputGroup>
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            {groupBy === 'cluster' ? (
+                              <>
+                                {(!groupBySearchValue || 'all clusters'.includes(groupBySearchValue.toLowerCase())) && (
+                                  <SelectOption value="all">All clusters</SelectOption>
+                                )}
+                                {allClustersData
+                                  .filter(cluster => !groupBySearchValue || cluster.name.toLowerCase().includes(groupBySearchValue.toLowerCase()))
+                                  .map(cluster => (
+                                    <SelectOption key={cluster.id} value={cluster.id}>
+                                      {cluster.name}
+                                    </SelectOption>
+                                  ))}
+                              </>
+                            ) : (
+                              <>
+                                {(!groupBySearchValue || 'all projects'.includes(groupBySearchValue.toLowerCase())) && (
+                                  <SelectOption value="all">All projects</SelectOption>
+                                )}
+                                {allProjectsData
+                                  .filter(project => !groupBySearchValue || project.name.toLowerCase().includes(groupBySearchValue.toLowerCase()))
+                                  .map(project => (
+                                    <SelectOption key={project.id} value={project.id}>
+                                      {project.name}
+                                    </SelectOption>
+                                  ))}
+                              </>
+                            )}
+                          </SelectList>
+                        </Select>
                       </FlexItem>
                     </Flex>
                   </FlexItem>
 
-                  {/* Timeline Selector - 24px spacing */}
+                  {/* Time Range Selector - 24px spacing */}
                   <FlexItem style={{ marginLeft: '24px' }}>
-                    <ToggleGroup aria-label="Timeline view">
-                      <ToggleGroupItem
-                        text="Current"
-                        buttonId="global-current"
-                        isSelected={timelineView === 'current'}
-                        onChange={() => setTimelineView('current')}
-                      />
-                      <ToggleGroupItem
-                        text="4 weeks"
-                        buttonId="global-4weeks"
-                        isSelected={timelineView === '4weeks'}
-                        onChange={() => setTimelineView('4weeks')}
-                      />
-                      <ToggleGroupItem
-                        text="12 weeks"
-                        buttonId="global-12weeks"
-                        isSelected={timelineView === '12weeks'}
-                        onChange={() => setTimelineView('12weeks')}
-                      />
-                      <ToggleGroupItem
-                        text="6 months"
-                        buttonId="global-6months"
-                        isSelected={timelineView === '6months'}
-                        onChange={() => setTimelineView('6months')}
-                      />
-                    </ToggleGroup>
+                    <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
+                      <FlexItem>
+                        <span style={{ fontSize: '14px', color: '#151515', fontWeight: 600 }}>
+                          Select time range:
+                        </span>
+                      </FlexItem>
+                      <FlexItem>
+                        <Select
+                          isOpen={timeRangeSelectOpen}
+                          onSelect={(_event, value) => {
+                            setTimelineView(value as string);
+                            setTimeRangeSelectOpen(false);
+                          }}
+                          onOpenChange={(isOpen) => setTimeRangeSelectOpen(isOpen)}
+                          selected={timelineView}
+                          toggle={(toggleRef) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() => setTimeRangeSelectOpen(!timeRangeSelectOpen)}
+                              isExpanded={timeRangeSelectOpen}
+                              style={{ minWidth: '220px' }}
+                            >
+                              {timelineView === 'current' ? 'Current' :
+                               timelineView === 'month-to-date' ? 'Month to date' :
+                               timelineView === 'previous-month' ? 'Previous month' :
+                               timelineView === 'previous-and-month-to-date' ? 'Previous month and month to date' :
+                               timelineView === 'last-30-days' ? 'Last 30 days' :
+                               timelineView === 'last-60-days' ? 'Last 60 days' :
+                               timelineView === 'last-90-days' ? 'Last 90 days' :
+                               timelineView === 'custom' ? 'Custom time range' :
+                               'Current'}
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            <SelectOption value="current">Current</SelectOption>
+                            <SelectOption value="month-to-date">Month to date</SelectOption>
+                            <SelectOption value="previous-month">Previous month</SelectOption>
+                            <SelectOption value="previous-and-month-to-date">Previous month and month to date</SelectOption>
+                            <SelectOption value="last-30-days">Last 30 days</SelectOption>
+                            <SelectOption value="last-60-days">Last 60 days</SelectOption>
+                            <SelectOption value="last-90-days">Last 90 days</SelectOption>
+                            <SelectOption value="custom">Custom time range</SelectOption>
+                          </SelectList>
+                        </Select>
+                      </FlexItem>
+                      <FlexItem>
+                        <span style={{ fontSize: '13px', color: '#6a6e73' }}>
+                          ({(() => {
+                            const now = new Date();
+                            const formatDate = (d: Date) => {
+                              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+                            };
+                            
+                            if (timelineView === 'current') {
+                              return `Calculated: ${formatDate(now)} at ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+                            }
+                            
+                            let startDate: Date;
+                            let endDate = now;
+                            
+                            switch (timelineView) {
+                              case 'month-to-date':
+                                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                                break;
+                              case 'previous-month':
+                                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                                break;
+                              case 'previous-and-month-to-date':
+                                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                                break;
+                              case 'last-30-days':
+                                startDate = new Date(now);
+                                startDate.setDate(startDate.getDate() - 30);
+                                break;
+                              case 'last-60-days':
+                                startDate = new Date(now);
+                                startDate.setDate(startDate.getDate() - 60);
+                                break;
+                              case 'last-90-days':
+                                startDate = new Date(now);
+                                startDate.setDate(startDate.getDate() - 90);
+                                break;
+                              case 'custom':
+                              default:
+                                startDate = new Date(now);
+                                startDate.setDate(startDate.getDate() - 30);
+                                break;
+                            }
+                            
+                            return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+                          })()})
+                        </span>
+                      </FlexItem>
+                    </Flex>
                   </FlexItem>
-
-                  {/* Calculated timestamp - only show for Current view */}
-                  {timelineView === 'current' && (
-                    <FlexItem>
-                      <span style={{ fontSize: '13px', color: '#6a6e73', marginLeft: '12px' }}>
-                        (Calculated: {(() => {
-                          const now = new Date();
-                          const day = String(now.getDate()).padStart(2, '0');
-                          const month = String(now.getMonth() + 1).padStart(2, '0');
-                          const year = now.getFullYear();
-                          return `${day}/${month}/${year}`;
-                        })()} at {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })})
-                      </span>
-                    </FlexItem>
-                  )}
                 </Flex>
               </FlexItem>
 

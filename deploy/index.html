@@ -368,6 +368,11 @@
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/settings` 
                                 : `${protoPath}/dist/index.html#/cost-management/settings`;
+                        } else if (proto.id === 'COST-5109') {
+                            // Land on Settings page with Create Cost Model wizard open for GPU prototype
+                            fullPath = isGitHubPages 
+                                ? `/Cost-Management-Prototype/${protoPath}/dist/index.html#/cost-management/settings?createWizard=true` 
+                                : `${protoPath}/dist/index.html#/cost-management/settings?createWizard=true`;
                         } else {
                             fullPath = isGitHubPages 
                                 ? `/Cost-Management-Prototype/${protoPath}/dist/index.html` 
